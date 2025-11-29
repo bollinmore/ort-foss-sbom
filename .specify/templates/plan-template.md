@@ -31,7 +31,10 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- Code Quality & Maintainability: plan includes strict TypeScript usage, lint/format enforcement, and small, reviewable module boundaries for new work.
+- Testing Standards & Determinism: plan lists unit + integration/contract tests, fixtures to keep runs offline, and deterministic update steps for golden data.
+- User Experience Consistency: plan documents CLI/API impact, ensures stable flags/output/error formats, and provides migration notes for any breaking UX.
+- Performance & Reliability: plan sets expected runtime/memory budgets (target <15m p95 for standard scan), retry/timeout strategy, and constraints on downloads/concurrency.
 
 ## Project Structure
 
