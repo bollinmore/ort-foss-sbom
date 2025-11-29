@@ -17,11 +17,11 @@ description: "Task list for Automated ORT + Fossology Compliance Scanner"
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Configure strict TypeScript, path aliases, and build output in tsconfig.json
-- [ ] T002 Add lint/format/test tooling configs (eslint, prettier, jest) in package.json and config files
-- [ ] T003 Create Docker Compose services for ORT CLI, Fossology, and API in docker-compose.yml
-- [ ] T004 Add CI workflow skeleton for lint/test/scan dry-run in .github/workflows/ci.yml
-- [ ] T028 Add timed E2E fixture run measuring total runtime vs <15m p95 target in .github/workflows/ci.yml (reports duration)
+- [x] T001 Configure strict TypeScript, path aliases, and build output in tsconfig.json
+- [x] T002 Add lint/format/test tooling configs (eslint, prettier, jest) in package.json and config files
+- [x] T003 Create Docker Compose services for ORT CLI, Fossology, and API in docker-compose.yml
+- [x] T004 Add CI workflow skeleton for lint/test/scan dry-run in .github/workflows/ci.yml
+- [x] T028 Add timed E2E fixture run measuring total runtime vs <15m p95 target in .github/workflows/ci.yml (reports duration)
 
 ---
 
@@ -29,11 +29,11 @@ description: "Task list for Automated ORT + Fossology Compliance Scanner"
 
 **Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
 
-- [ ] T005 Implement shared data models (ProjectInput, ScanJob, ComplianceReport) in src/models/
-- [ ] T006 Implement structured logger/tracer utilities with stage context in src/lib/logger.ts
-- [ ] T007 Implement HTTP client wrapper with retry/backoff/timeout defaults in src/lib/httpClient.ts
-- [ ] T008 Prepare offline fixtures (ORT analyzer/scanner outputs, Fossology responses) in tests/fixtures/
-- [ ] T029 Implement artifact streaming/capping for SBOM/upload in src/services/workflowOrchestrator.ts with resource limits documented
+- [x] T005 Implement shared data models (ProjectInput, ScanJob, ComplianceReport) in src/models/
+- [x] T006 Implement structured logger/tracer utilities with stage context in src/lib/logger.ts
+- [x] T007 Implement HTTP client wrapper with retry/backoff/timeout defaults in src/lib/httpClient.ts
+- [x] T008 Prepare offline fixtures (ORT analyzer/scanner outputs, Fossology responses) in tests/fixtures/
+- [x] T029 Implement artifact streaming/capping for SBOM/upload in src/services/workflowOrchestrator.ts with resource limits documented
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 

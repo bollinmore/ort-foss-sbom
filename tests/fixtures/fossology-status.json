@@ -1,0 +1,8 @@
+{
+  "uploadId": 101,
+  "status": "completed",
+  "licenses": [
+    { "componentId": "pkg:npm/example-a@1.0.0", "license": "MIT", "confidence": 98 },
+    { "componentId": "pkg:npm/example-b@2.0.0", "license": "Apache-2.0", "confidence": 96 }
+  ]
+}

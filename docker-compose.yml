@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  api:
+    image: node:18
+    working_dir: /app
+    volumes:
+      - ./:/app
+    command: ["npm", "run", "scan", "--", "/path/to/project"]
+    environment:
+      - FOSSOLOGY_API_URL=http://fossology:8081
+      - FOSSOLOGY_TOKEN=${FOSSOLOGY_TOKEN:?set token}
+    depends_on:
+      - ort
+      - fossology
+
+  ort:
+    image: ghcr.io/oss-review-toolkit/ort:latest
+    environment:
+      - ORT_CONFIG=/etc/ort.conf
+    volumes:
+      - ./out:/out
+      - ./specs:/specs
+
+  fossology:
+    image: fossology/fossology:latest
+    environment:
+      - FOSSOLOGY_ADMIN_USERNAME=admin
+      - FOSSOLOGY_ADMIN_PASSWORD=admin
+    ports:
+      - "8081:80"
+    volumes:
+      - fossology_data:/var/lib/fossology
+
+volumes:
+  fossology_data:
