@@ -67,8 +67,8 @@ An automation engineer runs the pipeline in CI to fail builds on license risks o
 
 **Acceptance Scenarios**:
 
-1. **Given** CI credentials and a project path, **When** the pipeline runs the compliance command, **Then** it exits non-zero if license risks exceed policy and attaches the merged report as an artifact.
-2. **Given** a successful run, **When** the CI job completes, **Then** the merged report is available for downstream jobs and contains both SBOM and license risk summary.
+1. **Given** CI credentials and a project path, **When** the pipeline runs the compliance command, **Then** it exits non-zero (exit code 1) if license risks exceed policy or licenses are unknown/incompatible and attaches the merged report as an artifact.
+2. **Given** a successful run, **When** the CI job completes, **Then** the merged report is available for downstream jobs and contains SBOM URL, merged report URLs (HTML/JSON), risk summary fields, and coverage percentage.
 
 ---
 
@@ -79,7 +79,8 @@ An automation engineer runs the pipeline in CI to fail builds on license risks o
 - Project path missing or unreadable → system reports actionable error without partial uploads.
 - Fossology service unreachable or times out → job surfaces retryable status and clear failure reason without losing artifacts.
 - ORT scan detects components without identifiable licenses → report flags unknowns and marks coverage gaps.
-- Large repositories or binary blobs inflate artifacts → pipeline streams or caps artifact size while keeping runtime within target budget.
+- Large repositories or binary blobs inflate artifacts → pipeline streams or caps artifact size (e.g., 500MB per artifact) while keeping runtime within target budget; emit `ARTIFACT_TOO_LARGE` when exceeded.
+- CI risk breach → pipeline fails within 1 minute of detection and publishes merged report artifact.
 - CI risk breach → pipeline fails within 1 minute of detection and publishes merged report artifact.
 
 ## Requirements *(mandatory)*
@@ -91,16 +92,17 @@ An automation engineer runs the pipeline in CI to fail builds on license risks o
 
 ### Functional Requirements
 
-- **FR-001**: System MUST provide a single non-interactive command to perform ORT analysis, scan, packaging, and submission from a local project path with remote downloads disabled by default.
+- **FR-001**: System MUST provide a single non-interactive command (`scan --path <abs> --config <file?> --downloader-enabled=false (default) --output <dir> default ./out`) to perform ORT analysis, scan, packaging, and submission from a local project path with remote downloads disabled by default.
 - **FR-002**: System MUST generate an SPDX SBOM that captures 100% third-party components from dependency graphs and source scanning, including version and path metadata.
 - **FR-003**: System MUST upload the SBOM and supporting artifacts to the Fossology API, returning a job identifier for tracking.
 - **FR-004**: System MUST expose job status that reflects pipeline stages (analyze, scan, upload, license review) with timestamps and error reasons.
-- **FR-005**: System MUST retrieve Fossology license findings and merge them with the SBOM into a consolidated human-readable and machine-consumable report.
-- **FR-006**: System MUST flag license risks (e.g., unknown, incompatible, or missing attributions) and mark runs as failed when policy thresholds are exceeded, returning a non-zero exit code and risk summary fields.
-- **FR-007**: System MUST complete the end-to-end pipeline within 15 minutes p95 for a representative project size and surface progress/timeouts when nearing limits; runtime is measured via CI E2E fixture job.
+- **FR-005**: System MUST retrieve Fossology license findings and merge them with the SBOM into a consolidated human-readable and machine-consumable report including SBOM URL, merged report URLs (HTML/JSON), risk summary, coverage percentage, and artifact directory (default ./out/<jobId>/).
+- **FR-006**: System MUST flag license risks (e.g., unknown, incompatible, or missing attributions) and mark runs as failed when policy thresholds are exceeded, returning exit code 1 and risk summary fields; low-risk notices produce warnings only.
+- **FR-007**: System MUST complete the end-to-end pipeline within 15 minutes p95 for a representative project size (≤5k files, ≤1GB workspace, ≤1k dependencies, ≤300MB binaries) and surface progress/timeouts when nearing limits; runtime is measured via CI E2E fixture job.
 - **FR-008**: System MUST operate deterministically in offline or restricted-network environments by using fixtures/mocks for tests and disallowing unapproved downloads.
-- **FR-009**: System MUST provide structured, stage-scoped logs and actionable error messages suitable for auditors and CI consumption, with secrets/paths redacted.
+- **FR-009**: System MUST provide structured, stage-scoped logs (fields: timestamp, jobId, stage, event, code, message) and actionable error messages suitable for auditors and CI consumption, with secrets/paths redacted.
 - **FR-010**: System MUST allow CI/CD execution with configurable output locations for reports and non-zero exits on compliance failures.
+- **FR-011**: System MUST define retries/backoff/timeouts for external calls (e.g., 3 retries, exponential backoff up to 60s, per-call timeouts, global 15m cap) and document downloader-off enforcement in production runs.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -113,7 +115,8 @@ An automation engineer runs the pipeline in CI to fail builds on license risks o
 ### Assumptions
 
 - Fossology endpoint and credentials are pre-configured and reachable from the execution environment.
-- Representative project size used for performance targets matches typical local repositories intended for scanning.
+- Representative project size used for performance targets matches typical local repositories intended for scanning (≤5k files, ≤1GB workspace, ≤1k dependencies, ≤300MB binaries).
+- Credentials provided via environment/CI secrets; downloader remains disabled in production and tests; network egress limited to Fossology endpoint.
 - Compliance policies and license risk thresholds are defined outside this feature but are available for evaluation.
 
 ## Success Criteria *(mandatory)*
@@ -131,3 +134,13 @@ An automation engineer runs the pipeline in CI to fail builds on license risks o
 - **SC-004**: CI/CD runs fail within 1 minute of detecting a license policy violation and produce a downloadable merged report for every run.
 - **SC-005**: Operators/reviewers obtain status updates and risk summaries within 30 seconds of request for any in-progress or completed job.
 - **SC-006**: License accuracy on fixtures meets or exceeds 95% with documented discrepancies.
+
+## Deployment and CI Requirements
+
+- Provide Docker Compose with services for ORT CLI, Fossology, and API; pin image versions and document required environment variables.
+- Provide a CI job that runs the scan command, uploads/publishes artifacts (report.html/report.json/sbom.spdx.json), and measures runtime against the <15m p95 target.
+- CI must fail within 1 minute of detecting incompatible or unknown licenses and publish merged report artifacts for auditing.
+
+## End-to-End Flow
+
+- Primary flow: trigger scan (US1) → monitor status (US2) → consume report/exit codes (US3) with consistent JSON/CLI outputs, structured logs, and documented artifacts.

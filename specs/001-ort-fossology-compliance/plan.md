@@ -23,11 +23,12 @@ Automate offline-compatible compliance scanning for local projects by orchestrat
 **Testing**: Jest/TS-based unit + integration + contract tests with offline fixtures  
 **Target Platform**: Linux containers and CI runners (Docker Compose local)  
 **Project Type**: Single CLI/API service  
-**Performance Goals**: <15m p95 end-to-end scan for representative repo; status responses within 30s  
+**Performance Goals**: <15m p95 end-to-end scan for representative repo; status responses within 30s; CI risk fail within 1 minute  
 **Constraints**: Offline-safe by default (downloader disabled), deterministic outputs, memory capped for large artifacts, non-interactive CLI/JSON UX  
 **Scale/Scope**: Typical local repos; artifact sizes may be large due to SBOM/SPDX but streamed/capped  
 **Performance Measurement**: CI E2E fixture job measures total runtime; enforce <15m p95 and resource caps via streaming.  
-**Security/Redaction**: Logs and reports must redact secrets/paths; downloader remains disabled in production runs; fixture update process documented.
+**Security/Redaction**: Logs and reports must redact secrets/paths; downloader remains disabled in production runs; fixture update process documented.  
+**Versions/Deps**: Pin ORT CLI and Fossology API/image versions; document Docker Compose service versions and required env vars.
 
 ## Constitution Check
 
