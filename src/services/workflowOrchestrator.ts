@@ -8,6 +8,7 @@ import { runOrtScan } from './ortRunner';
 import { uploadSpdx, fetchFossologyStatus } from './fossologyClient';
 import { ProjectInput, ComplianceReport } from '../models';
 import { mergeReport } from './reportMerger';
+import { jobStore } from './jobStore';
 
 const logger = createLogger({ stage: 'orchestrator' });
 
@@ -82,18 +83,23 @@ export interface OrchestrateResult {
 export async function orchestrateScan(input: ProjectInput): Promise<OrchestrateResult> {
   const jobId = `job-${Date.now()}`;
   logger.info('scan_started', { jobId, event: 'scan_started' });
+  jobStore.create(jobId);
+  jobStore.update(jobId, 'analyzing', 'analyze', 10);
 
   const { analyzerPath, scannerPath } = await runOrtScan(input);
   logger.info('ort_scan_complete', { jobId, event: 'ort_scan_complete' });
+  jobStore.update(jobId, 'scanning', 'scan', 40);
 
   const upload = await uploadSpdx(scannerPath, {
     apiUrl: process.env.FOSSOLOGY_API_URL || 'http://fossology:8081',
     token: process.env.FOSSOLOGY_TOKEN || 'test-token'
   });
   logger.info('upload_scheduled', { jobId, event: 'upload_scheduled', data: upload });
+  jobStore.update(jobId, 'uploading', 'upload', 60);
 
   const fossologyStatus = await fetchFossologyStatus(upload.uploadId);
   logger.info('license_review_complete', { jobId, event: 'license_review_complete' });
+  jobStore.update(jobId, 'license_review', 'license_review', 80);
 
   const report = await mergeReport({
     jobId,
@@ -102,6 +108,13 @@ export async function orchestrateScan(input: ProjectInput): Promise<OrchestrateR
     fossologyStatus,
     outputDir: path.resolve(input.config?.outputDir ?? './out', jobId)
   });
+
+  jobStore.setArtifacts(jobId, {
+    sbom: report.sbom,
+    report: report.reportUrl,
+    reportJson: report.reportJsonUrl
+  });
+  jobStore.update(jobId, 'completed', 'completed', 100);
 
   return { jobId, report };
 }

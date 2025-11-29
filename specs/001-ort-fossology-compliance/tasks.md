@@ -73,15 +73,15 @@ description: "Task list for Automated ORT + Fossology Compliance Scanner"
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T017 [P] [US2] Contract test for GET /status/:jobId covering stages/progress/errors in tests/contract/status.spec.ts
-- [ ] T031 [P] [US2] Contract test: Fossology unreachable/timeout surfaces retryable status and clear reason in tests/contract/status.spec.ts
-- [ ] T036 [US2] Status freshness check: polling/updates meet ≤30s freshness target using fixture job in tests/integration/status.freshness.spec.ts
+- [x] T017 [P] [US2] Contract test for GET /status/:jobId covering stages/progress/errors in tests/contract/status.spec.ts
+- [x] T031 [P] [US2] Contract test: Fossology unreachable/timeout surfaces retryable status and clear reason in tests/contract/status.spec.ts
+- [x] T036 [US2] Status freshness check: polling/updates meet ≤30s freshness target using fixture job in tests/integration/status.freshness.spec.ts
 
 ### Implementation for User Story 2
 
-- [ ] T018 [US2] Implement status handler for GET /status/:jobId exposing stage/progress/timestamps in src/services/api/statusHandler.ts
-- [ ] T019 [P] [US2] Implement job state store with stage updates and persistence in src/services/jobStore.ts
-- [ ] T020 [US2] Extend workflow to emit stage events and progress updates for status responses in src/services/workflowOrchestrator.ts
+- [x] T018 [US2] Implement status handler for GET /status/:jobId exposing stage/progress/timestamps in src/services/api/statusHandler.ts
+- [x] T019 [P] [US2] Implement job state store with stage updates and persistence in src/services/jobStore.ts
+- [x] T020 [US2] Extend workflow to emit stage events and progress updates for status responses in src/services/workflowOrchestrator.ts
 
 **Checkpoint**: User Stories 1 AND 2 independently functional
 

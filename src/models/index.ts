@@ -32,6 +32,8 @@ export interface ScanJob {
     reportJson?: string;
     logs?: string;
   };
+  stage?: string;
+  progressPercent?: number;
 }
 
 export interface OrtScanResult {
