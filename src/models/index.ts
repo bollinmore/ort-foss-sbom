@@ -13,6 +13,15 @@ export interface OrtConfig {
   excludes?: string[];
   timeoutSeconds?: number;
   outputDir?: string;
+  /**
+   * integrationMode: fixture uses offline fixtures; live triggers actual ORT/Fossology calls.
+   */
+  integrationMode?: 'fixture' | 'live';
+  ortCliPath?: string; // optional override, otherwise resolved from PATH
+  fossologyApiUrl?: string;
+  fossologyToken?: string;
+  fossologyPollSeconds?: number; // interval between Fossology status polls
+  maxArtifactSizeBytes?: number; // cap to guard against oversized uploads
   simulateRisk?: boolean; // test-only toggle to simulate license risk failure
 }
 

@@ -86,28 +86,43 @@ export async function orchestrateScan(input: ProjectInput): Promise<OrchestrateR
   jobStore.create(jobId);
   jobStore.update(jobId, 'analyzing', 'analyze', 10);
 
-  const { analyzerPath, scannerPath } = await runOrtScan(input);
+  const outputDir = path.resolve(input.config?.outputDir ?? './out', jobId);
+
+  const { analyzerPath, scannerPath } = await runOrtScan({
+    ...input,
+    config: {
+      ...input.config,
+      outputDir
+    }
+  });
   logger.info('ort_scan_complete', { jobId, event: 'ort_scan_complete' });
   jobStore.update(jobId, 'scanning', 'scan', 40);
 
   const upload = await uploadSpdx(scannerPath, {
-    apiUrl: process.env.FOSSOLOGY_API_URL || 'http://fossology:8081',
-    token: process.env.FOSSOLOGY_TOKEN || 'test-token'
+    apiUrl: input.config?.fossologyApiUrl || process.env.FOSSOLOGY_API_URL || 'http://fossology:8081',
+    token: input.config?.fossologyToken || process.env.FOSSOLOGY_TOKEN || 'test-token',
+    mode: input.config?.integrationMode === 'live' ? 'live' : 'stub',
+    maxArtifactSizeBytes: input.config?.maxArtifactSizeBytes ?? 500 * 1024 * 1024,
+    pollSeconds: input.config?.fossologyPollSeconds ?? 5
   });
   logger.info('upload_scheduled', { jobId, event: 'upload_scheduled', data: upload });
   jobStore.update(jobId, 'uploading', 'upload', 60);
 
-  const fossologyStatus = await fetchFossologyStatus(upload.uploadId);
+  const fossologyStatus = await fetchFossologyStatus(upload.uploadId, {
+    apiUrl: input.config?.fossologyApiUrl || process.env.FOSSOLOGY_API_URL || 'http://fossology:8081',
+    token: input.config?.fossologyToken || process.env.FOSSOLOGY_TOKEN || 'test-token',
+    mode: input.config?.integrationMode === 'live' ? 'live' : 'stub'
+  });
   logger.info('license_review_complete', { jobId, event: 'license_review_complete' });
-  const hasRisk = Boolean((fossologyStatus as any).risks?.length || input.config?.simulateRisk);
-  jobStore.update(jobId, hasRisk ? 'failed' : 'license_review', 'license_review', 80);
+  const hasRisk = Boolean((fossologyStatus as any).risks?.length || (fossologyStatus as any).unknownLicenses > 0 || input.config?.simulateRisk);
+  jobStore.update(jobId, hasRisk ? 'failed' : 'license_review', 'license_review', 80, hasRisk ? 'LICENSE_UNKNOWN' : undefined);
 
   const report = await mergeReport({
     jobId,
     analyzerPath,
     scannerPath,
     fossologyStatus,
-    outputDir: path.resolve(input.config?.outputDir ?? './out', jobId),
+    outputDir,
     hasRisk
   });
 

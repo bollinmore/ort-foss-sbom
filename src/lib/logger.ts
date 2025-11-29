@@ -5,6 +5,11 @@ export interface LogContext {
   stage?: string;
   event?: string;
   code?: string;
+  cmd?: string;
+  durationMs?: number;
+  retries?: number;
+  file?: string;
+  uploadId?: number;
   data?: unknown;
 }
 

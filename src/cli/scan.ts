@@ -16,7 +16,15 @@ export async function runScanCli(argv = process.argv.slice(2)) {
   try {
     const { jobId, report } = await orchestrateScan({
       localPath: path.resolve(localPath),
-      config: { downloaderEnabled: false, simulateRisk: process.env.SIMULATE_RISK === '1' }
+      config: {
+        downloaderEnabled: false,
+        simulateRisk: process.env.SIMULATE_RISK === '1',
+        integrationMode: process.env.INTEGRATION_MODE === 'live' ? 'live' : 'fixture',
+        outputDir: process.env.OUTPUT_DIR,
+        ortCliPath: process.env.ORT_CLI_PATH,
+        fossologyApiUrl: process.env.FOSSOLOGY_API_URL,
+        fossologyToken: process.env.FOSSOLOGY_TOKEN
+      }
     });
     logger.info('scan_completed', {
       jobId,

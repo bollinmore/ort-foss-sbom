@@ -1,6 +1,12 @@
-import { access } from 'fs/promises';
+import { access, copyFile, mkdir, readdir } from 'fs/promises';
 import path from 'path';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
 import { OrtConfig, ProjectInput } from '../models';
+import { createLogger } from '../lib/logger';
+
+const execFileAsync = promisify(execFile);
+const logger = createLogger({ stage: 'ort_runner' });
 
 export interface OrtScanOutput {
   analyzerPath: string;
@@ -23,9 +29,94 @@ export async function runOrtScan(input: ProjectInput): Promise<OrtScanOutput> {
     throw new Error('DOWNLOADER_DISABLED');
   }
 
-  // For now, point to offline fixtures. In real flow, this would shell out to ORT CLI.
-  const analyzerPath = path.resolve('tests/fixtures/analyzer.json');
-  const scannerPath = path.resolve('tests/fixtures/scanner.spdx.json');
+  const integrationMode = config.integrationMode ?? (process.env.INTEGRATION_MODE as 'fixture' | 'live') ?? 'fixture';
+  const ortOutputDir = path.resolve(config.outputDir ?? './out', 'ort');
+  await mkdir(ortOutputDir, { recursive: true });
+
+  const useFixtures = integrationMode !== 'live';
+
+  if (useFixtures) {
+    // Deterministic offline fixtures to satisfy tests and local runs without ORT installed.
+    const analyzerFixture = path.resolve('tests/fixtures/analyzer.json');
+    const scannerFixture = path.resolve('tests/fixtures/scanner.spdx.json');
+    const analyzerPath = path.join(ortOutputDir, 'analyzer.json');
+    const scannerPath = path.join(ortOutputDir, 'scanner.spdx.json');
+    await Promise.all([
+      copyFixture(analyzerFixture, analyzerPath),
+      copyFixture(scannerFixture, scannerPath)
+    ]);
+    return { analyzerPath, scannerPath };
+  }
+
+  const ortCliPath = config.ortCliPath || process.env.ORT_CLI_PATH || 'ort';
+  const timeoutMs = (config.timeoutSeconds ?? 300) * 1000;
+
+  const analyzerPathCandidates = [
+    'analyzer-result.json',
+    'analyzer-result.yml',
+    'analyzer-result.yaml',
+    'analyzer-result.spdx.json'
+  ];
+  const scannerPathCandidates = [
+    'scan-result.spdx.json',
+    'scan-result.json',
+    'scan-result.yml',
+    'scan-result.yaml',
+    'scanner.spdx.json'
+  ];
+
+  const runOrtCommand = async (args: string[]) => {
+    const cmd = `${ortCliPath} ${args.join(' ')}`;
+    logger.info('ort_exec', { event: 'ort_exec', cmd });
+    return execFileAsync(ortCliPath, args, {
+      timeout: timeoutMs,
+      maxBuffer: 10 * 1024 * 1024,
+      env: { ...process.env, JAVA_TOOL_OPTIONS: '-Djava.awt.headless=true' }
+    });
+  };
+
+  // Run ORT analyze
+  await runOrtCommand([
+    'analyze',
+    '-i',
+    input.localPath,
+    '--output-dir',
+    ortOutputDir,
+    '--force-overwrite',
+    '--downloader-enabled',
+    String(config.downloaderEnabled ?? false)
+  ]);
+
+  // Run ORT scan (expects analyzer result exists)
+  await runOrtCommand([
+    'scan',
+    '-i',
+    input.localPath,
+    '--output-dir',
+    ortOutputDir,
+    '--force-overwrite'
+  ]);
+
+  const resolveOutput = async (candidates: string[]) => {
+    const files = await readdir(ortOutputDir);
+    const match = candidates.find((candidate) => files.includes(candidate));
+    if (!match) {
+      return undefined;
+    }
+    return path.join(ortOutputDir, match);
+  };
+
+  const analyzerPath = await resolveOutput(analyzerPathCandidates);
+  const scannerPath = await resolveOutput(scannerPathCandidates);
+
+  if (!analyzerPath || !scannerPath) {
+    throw new Error('ORT_OUTPUT_MISSING');
+  }
 
   return { analyzerPath, scannerPath };
+}
+
+async function copyFixture(src: string, dest: string) {
+  await mkdir(path.dirname(dest), { recursive: true });
+  await copyFile(src, dest);
 }

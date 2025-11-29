@@ -25,3 +25,32 @@
 - Fixture refresh: update `tests/fixtures/analyzer.json`, `scanner.spdx.json`, and `fossology-status.json` when upstream tools change; keep copies under version control for deterministic tests.  
 - Downloader enforcement: ensure `downloaderEnabled` stays false in all environments; CI must block if set true.  
 - Secrets: provide credentials via env/CI secrets; never log or return secret values.
+
+## Real environment setup (ORT + Fossology)
+
+1. **Env file**: copy `.env.sample` to `.env` and set:
+   - `INTEGRATION_MODE=live`
+   - `ORT_CLI_PATH` (if not on PATH)
+   - `FOSSOLOGY_MODE=live`, `FOSSOLOGY_API_URL`, `FOSSOLOGY_TOKEN`
+   - Optional: `OUTPUT_DIR`, `FOSSOLOGY_POLL_SECONDS`, `MAX_ARTIFACT_SIZE_BYTES`
+
+2. **Docker Compose (local stack)**  
+   ```
+   docker-compose up -d fossology ort
+   ```
+   - Fossology UI/API: http://localhost:8081 (credentials in compose env)
+   - ORT CLI image: `ghcr.io/oss-review-toolkit/ort:latest`
+
+3. **Install ORT CLI locally (alternative to container)**  
+   - Follow ORT docs to download the binary/JAR.  
+   - Export `ORT_CLI_PATH=/path/to/ort` or place on PATH.
+
+4. **Run live scan**  
+   ```
+   INTEGRATION_MODE=live \
+   FOSSOLOGY_MODE=live \
+   FOSSOLOGY_API_URL=http://localhost:8081 \
+   FOSSOLOGY_TOKEN=<token> \
+   npm run scan /absolute/path/to/project
+   ```
+   Outputs real ORT/Fossology artifacts under `./out/<jobId>/`.
