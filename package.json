@@ -9,6 +9,7 @@
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "format": "prettier --write \"{src,tests}/**/*.{ts,tsx,js,json,md}\"",
     "test": "jest --coverage",
+    "prescan": "npm run build",
     "scan": "node dist/cli/scan.js"
   },
   "dependencies": {
