@@ -95,17 +95,17 @@ description: "Task list for Automated ORT + Fossology Compliance Scanner"
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T021 [P] [US3] Contract test for GET /report/:jobId returning merged report links and risk summary in tests/contract/report.spec.ts
-- [ ] T022 [US3] Integration test for CI exit codes and artifact outputs on risk breach in tests/integration/report.ci.spec.ts
-- [ ] T032 [P] [US3] Contract test: unknown/incompatible licenses trigger failure exit + risk summary in tests/contract/report.spec.ts
-- [ ] T035 [US3] Integration test: CI run fails within ≤1m of risk detection and publishes merged report artifacts in tests/integration/report.ci.spec.ts
-- [ ] T037 [US3] License accuracy sampling task comparing fixtures to expected 95%+ accuracy in tests/integration/license.accuracy.spec.ts
+- [x] T021 [P] [US3] Contract test for GET /report/:jobId returning merged report links and risk summary in tests/contract/report.spec.ts
+- [x] T022 [US3] Integration test for CI exit codes and artifact outputs on risk breach in tests/integration/report.ci.spec.ts
+- [x] T032 [P] [US3] Contract test: unknown/incompatible licenses trigger failure exit + risk summary in tests/contract/report.spec.ts
+- [x] T035 [US3] Integration test: CI run fails within ≤1m of risk detection and publishes merged report artifacts in tests/integration/report.ci.spec.ts
+- [x] T037 [US3] License accuracy sampling task comparing fixtures to expected 95%+ accuracy in tests/integration/license.accuracy.spec.ts
 
 ### Implementation for User Story 3
 
-- [ ] T023 [US3] Complete ReportMerger to combine SBOM + Fossology findings with coverage/risk metrics in src/services/reportMerger.ts
-- [ ] T024 [P] [US3] Implement GET /report/:jobId handler returning merged report URLs and summaries in src/services/api/reportHandler.ts
-- [ ] T025 [US3] Add CI-facing exit code and artifact publishing logic for risk thresholds in src/cli/scan.ts
+- [x] T023 [US3] Complete ReportMerger to combine SBOM + Fossology findings with coverage/risk metrics in src/services/reportMerger.ts
+- [x] T024 [P] [US3] Implement GET /report/:jobId handler returning merged report URLs and summaries in src/services/api/reportHandler.ts
+- [x] T025 [US3] Add CI-facing exit code and artifact publishing logic for risk thresholds in src/cli/scan.ts
 
 **Checkpoint**: All user stories independently functional with CI consumption
 

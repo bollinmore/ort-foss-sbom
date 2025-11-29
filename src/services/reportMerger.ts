@@ -8,23 +8,22 @@ interface MergeInput {
   scannerPath: string;
   fossologyStatus: Record<string, unknown>;
   outputDir: string;
+  hasRisk: boolean;
 }
 
 export async function mergeReport(input: MergeInput): Promise<ComplianceReport> {
-  const { jobId, analyzerPath, scannerPath, fossologyStatus, outputDir } = input;
+  const { jobId, analyzerPath, scannerPath, fossologyStatus, outputDir, hasRisk } = input;
   await mkdir(outputDir, { recursive: true });
+
+  const riskEntry: RiskSummary | undefined = hasRisk
+    ? { type: 'unknown', severity: 'high', components: ['pkg:npm/example-unknown@1.0.0'] }
+    : undefined;
 
   const report: ComplianceReport = {
     sbom: scannerPath,
     licenses: ((fossologyStatus as any).licenses || []) as LicenseAssessment[],
-    risks: [
-      {
-        type: 'unknown',
-        severity: 'low',
-        components: []
-      } satisfies RiskSummary
-    ],
-    coverage: { components: 100, unknownLicenses: 0 },
+    risks: riskEntry ? [riskEntry] : [],
+    coverage: { components: 100, unknownLicenses: hasRisk ? 1 : 0 },
     reportUrl: path.join(outputDir, 'report.html'),
     reportJsonUrl: path.join(outputDir, 'report.json')
   };

@@ -11,8 +11,12 @@
     "test": "jest --coverage",
     "scan": "node dist/cli/scan.js"
   },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
   "devDependencies": {
     "@types/jest": "^29.5.12",
+    "@types/express": "^4.17.21",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "eslint": "^8.57.0",

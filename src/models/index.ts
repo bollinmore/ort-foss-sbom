@@ -13,6 +13,7 @@ export interface OrtConfig {
   excludes?: string[];
   timeoutSeconds?: number;
   outputDir?: string;
+  simulateRisk?: boolean; // test-only toggle to simulate license risk failure
 }
 
 export interface ProjectInput {

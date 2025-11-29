@@ -99,14 +99,16 @@ export async function orchestrateScan(input: ProjectInput): Promise<OrchestrateR
 
   const fossologyStatus = await fetchFossologyStatus(upload.uploadId);
   logger.info('license_review_complete', { jobId, event: 'license_review_complete' });
-  jobStore.update(jobId, 'license_review', 'license_review', 80);
+  const hasRisk = Boolean((fossologyStatus as any).risks?.length || input.config?.simulateRisk);
+  jobStore.update(jobId, hasRisk ? 'failed' : 'license_review', 'license_review', 80);
 
   const report = await mergeReport({
     jobId,
     analyzerPath,
     scannerPath,
     fossologyStatus,
-    outputDir: path.resolve(input.config?.outputDir ?? './out', jobId)
+    outputDir: path.resolve(input.config?.outputDir ?? './out', jobId),
+    hasRisk
   });
 
   jobStore.setArtifacts(jobId, {
@@ -114,7 +116,7 @@ export async function orchestrateScan(input: ProjectInput): Promise<OrchestrateR
     report: report.reportUrl,
     reportJson: report.reportJsonUrl
   });
-  jobStore.update(jobId, 'completed', 'completed', 100);
+  jobStore.update(jobId, hasRisk ? 'failed' : 'completed', 'completed', 100, hasRisk ? 'LICENSE_UNKNOWN' : undefined);
 
   return { jobId, report };
 }

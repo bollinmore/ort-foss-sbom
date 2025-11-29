@@ -16,9 +16,21 @@ export async function runScanCli(argv = process.argv.slice(2)) {
   try {
     const { jobId, report } = await orchestrateScan({
       localPath: path.resolve(localPath),
-      config: { downloaderEnabled: false }
+      config: { downloaderEnabled: false, simulateRisk: process.env.SIMULATE_RISK === '1' }
     });
-    logger.info('scan_completed', { jobId, event: 'scan_completed', data: { report } });
+    logger.info('scan_completed', {
+      jobId,
+      event: 'scan_completed',
+      data: {
+        exitCode: report.risks.length > 0 ? 1 : 0,
+        reportUrl: report.reportUrl,
+        reportJsonUrl: report.reportJsonUrl,
+        sbom: report.sbom
+      }
+    });
+    if (report.risks.length > 0) {
+      process.exitCode = 1;
+    }
   } catch (err) {
     logger.error('scan_failed', { code: (err as Error).message });
     process.exitCode = 1;
