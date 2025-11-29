@@ -47,19 +47,19 @@ description: "Task list for Automated ORT + Fossology Compliance Scanner"
 
 ### Tests for User Story 1 ⚠️
 
-- [ ] T009 [P] [US1] Contract test for POST /scan covering valid/invalid path and downloader disabled in tests/contract/scan.spec.ts
-- [ ] T010 [US1] Integration test for CLI scan happy-path with fixtures and job ID in tests/integration/scan.cli.spec.ts
-- [ ] T030 [P] [US1] Contract test: POST /scan missing/unreadable path returns actionable error code/message in tests/contract/scan.spec.ts
-- [ ] T033 [US1] Integration test asserts stage-scoped structured logs and actionable errors during scan in tests/integration/scan.logs.spec.ts
+- [x] T009 [P] [US1] Contract test for POST /scan covering valid/invalid path and downloader disabled in tests/contract/scan.spec.ts
+- [x] T010 [US1] Integration test for CLI scan happy-path with fixtures and job ID in tests/integration/scan.cli.spec.ts
+- [x] T030 [P] [US1] Contract test: POST /scan missing/unreadable path returns actionable error code/message in tests/contract/scan.spec.ts
+- [x] T033 [US1] Integration test asserts stage-scoped structured logs and actionable errors during scan in tests/integration/scan.logs.spec.ts
 
 ### Implementation for User Story 1
 
-- [ ] T011 [US1] Implement OrtRunner to execute analyze/scan with downloader off in src/services/ortRunner.ts
-- [ ] T012 [P] [US1] Implement FossologyClient upload/schedule stubs using HTTP wrapper in src/services/fossologyClient.ts
-- [ ] T013 [US1] Implement WorkflowOrchestrator pipeline (analyze → scan → upload → merge hook) in src/services/workflowOrchestrator.ts
-- [ ] T014 [P] [US1] Implement CLI entrypoint `scan` command wiring orchestrator, logs, exit codes in src/cli/scan.ts
-- [ ] T015 [US1] Add API handler for POST /scan using orchestrator in src/services/api/scanHandler.ts
-- [ ] T016 [US1] Implement initial ReportMerger to package SBOM + upload metadata in src/services/reportMerger.ts
+- [x] T011 [US1] Implement OrtRunner to execute analyze/scan with downloader off in src/services/ortRunner.ts
+- [x] T012 [P] [US1] Implement FossologyClient upload/schedule stubs using HTTP wrapper in src/services/fossologyClient.ts
+- [x] T013 [US1] Implement WorkflowOrchestrator pipeline (analyze → scan → upload → merge hook) in src/services/workflowOrchestrator.ts
+- [x] T014 [P] [US1] Implement CLI entrypoint `scan` command wiring orchestrator, logs, exit codes in src/cli/scan.ts
+- [x] T015 [US1] Add API handler for POST /scan using orchestrator in src/services/api/scanHandler.ts
+- [x] T016 [US1] Implement initial ReportMerger to package SBOM + upload metadata in src/services/reportMerger.ts
 
 **Checkpoint**: User Story 1 independently functional and testable offline
 

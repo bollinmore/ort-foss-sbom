@@ -5,6 +5,7 @@ export interface LogContext {
   stage?: string;
   event?: string;
   code?: string;
+  data?: unknown;
 }
 
 const REDACTION_PATTERNS = [

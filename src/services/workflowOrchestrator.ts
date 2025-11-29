@@ -3,7 +3,11 @@ import { stat } from 'fs/promises';
 import { pipeline } from 'stream/promises';
 import { PassThrough, type Readable } from 'stream';
 import path from 'path';
-import { createLogger } from '@lib/logger';
+import { createLogger } from '../lib/logger';
+import { runOrtScan } from './ortRunner';
+import { uploadSpdx, fetchFossologyStatus } from './fossologyClient';
+import { ProjectInput, ComplianceReport } from '../models';
+import { mergeReport } from './reportMerger';
 
 const logger = createLogger({ stage: 'orchestrator' });
 
@@ -65,4 +69,39 @@ export async function assertArtifactWithinCap(
   if (stats.size > maxBytes) {
     throw new ArtifactTooLargeError('ARTIFACT_TOO_LARGE');
   }
+}
+
+export interface OrchestrateResult {
+  jobId: string;
+  report: ComplianceReport;
+}
+
+/**
+ * Minimal offline orchestrator to satisfy US1 flow.
+ */
+export async function orchestrateScan(input: ProjectInput): Promise<OrchestrateResult> {
+  const jobId = `job-${Date.now()}`;
+  logger.info('scan_started', { jobId, event: 'scan_started' });
+
+  const { analyzerPath, scannerPath } = await runOrtScan(input);
+  logger.info('ort_scan_complete', { jobId, event: 'ort_scan_complete' });
+
+  const upload = await uploadSpdx(scannerPath, {
+    apiUrl: process.env.FOSSOLOGY_API_URL || 'http://fossology:8081',
+    token: process.env.FOSSOLOGY_TOKEN || 'test-token'
+  });
+  logger.info('upload_scheduled', { jobId, event: 'upload_scheduled', data: upload });
+
+  const fossologyStatus = await fetchFossologyStatus(upload.uploadId);
+  logger.info('license_review_complete', { jobId, event: 'license_review_complete' });
+
+  const report = await mergeReport({
+    jobId,
+    analyzerPath,
+    scannerPath,
+    fossologyStatus,
+    outputDir: path.resolve(input.config?.outputDir ?? './out', jobId)
+  });
+
+  return { jobId, report };
 }
