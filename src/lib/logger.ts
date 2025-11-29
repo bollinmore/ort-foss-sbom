@@ -45,6 +45,8 @@ export function createLogger(baseContext: LogContext = {}) {
     warn: (msg: string, ctx: LogContext = {}, data?: unknown) =>
       log('warn', msg, { ...baseContext, ...ctx }, data),
     error: (msg: string, ctx: LogContext = {}, data?: unknown) =>
-      log('error', msg, { ...baseContext, ...ctx }, data)
+      log('error', msg, { ...baseContext, ...ctx }, data),
+    metric: (name: string, value: number, ctx: LogContext = {}) =>
+      log('info', 'metric', { ...baseContext, ...ctx, event: 'metric', code: name }, { value })
   };
 }

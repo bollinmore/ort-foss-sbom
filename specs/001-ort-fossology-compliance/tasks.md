@@ -115,12 +115,12 @@ description: "Task list for Automated ORT + Fossology Compliance Scanner"
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T026 Update documentation (quickstart, contracts) to reflect flags, outputs, and CI usage in specs/001-ort-fossology-compliance/
-- [ ] T027 Add observability/metrics hooks for key stages and performance budgets in src/lib/logger.ts and src/services/workflowOrchestrator.ts (metrics/alerts scope)
-- [ ] T034 Document fixture refresh process and downloader-off enforcement in specs/001-ort-fossology-compliance/quickstart.md
-- [ ] T038 Implement and validate log redaction for secrets/paths in src/lib/logger.ts with tests in tests/unit/logger.redaction.spec.ts
-- [ ] T039 Add contract test proving API responses/logs do not leak credentials or sensitive paths in tests/contract/security.spec.ts
-- [ ] T040 Clarify observability scope separation (T027 metrics/alerts vs T006/T007 logging/http client) in tasks.md
+- [x] T026 Update documentation (quickstart, contracts) to reflect flags, outputs, and CI usage in specs/001-ort-fossology-compliance/
+ - [x] T027 Add observability/metrics hooks for key stages and performance budgets in src/lib/logger.ts and src/services/workflowOrchestrator.ts (metrics/alerts scope)
+- [x] T034 Document fixture refresh process and downloader-off enforcement in specs/001-ort-fossology-compliance/quickstart.md
+- [x] T038 Implement and validate log redaction for secrets/paths in src/lib/logger.ts with tests in tests/unit/logger.redaction.spec.ts
+- [x] T039 Add contract test proving API responses/logs do not leak credentials or sensitive paths in tests/contract/security.spec.ts
+- [x] T040 Clarify observability scope separation (T027 metrics/alerts vs T006/T007 logging/http client) in tasks.md
 
 ---
 
