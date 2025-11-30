@@ -53,3 +53,6 @@
    ./scripts/scan-live.sh /absolute/path/to/project
    ```
    Outputs real ORT/Fossology artifacts under `./out/<jobId>/`.
+
+### Default ORT excludes
+- Repo root 提供 `.ort.yml`，預設排除 `.venv/**`（虛擬環境 / jupyter labextensions），避免缺少 lockfile 的管理外依賴導致 ORT 失敗。

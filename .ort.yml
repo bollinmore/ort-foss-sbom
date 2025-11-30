@@ -1,0 +1,11 @@
+analyzer:
+  skip_excluded: true
+
+excludes:
+  paths:
+    - pattern: "**/.venv/**"
+      reason: "TEST_TOOL_OF"
+      comment: "Exclude virtualenv and jupyter labextensions to avoid unmanaged node deps without lockfiles."
+    - pattern: ".venv/**"
+      reason: "TEST_TOOL_OF"
+      comment: "Exclude virtualenv (root-level) to avoid unmanaged node deps without lockfiles."

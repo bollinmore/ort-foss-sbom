@@ -68,34 +68,17 @@ export async function runOrtScan(input: ProjectInput): Promise<OrtScanOutput> {
   const runOrtCommand = async (args: string[]) => {
     const cmd = `${ortCliPath} ${args.join(' ')}`;
     logger.info('ort_exec', { event: 'ort_exec', cmd });
-    return execFileAsync(ortCliPath, args, {
-      timeout: timeoutMs,
-      maxBuffer: 10 * 1024 * 1024,
-      env: { ...process.env, JAVA_TOOL_OPTIONS: '-Djava.awt.headless=true' }
-    });
+    try {
+      return await execFileAsync(ortCliPath, args, {
+        timeout: timeoutMs,
+        maxBuffer: 10 * 1024 * 1024,
+        env: { ...process.env, JAVA_TOOL_OPTIONS: '-Djava.awt.headless=true' }
+      });
+    } catch (err: any) {
+      logger.error('ort_exec_failed', { event: 'ort_exec_failed', cmd }, { stderr: err?.stderr, stdout: err?.stdout });
+      throw err;
+    }
   };
-
-  // Run ORT analyze
-  await runOrtCommand([
-    'analyze',
-    '-i',
-    input.localPath,
-    '--output-dir',
-    ortOutputDir,
-    '--force-overwrite',
-    '--downloader-enabled',
-    String(config.downloaderEnabled ?? false)
-  ]);
-
-  // Run ORT scan (expects analyzer result exists)
-  await runOrtCommand([
-    'scan',
-    '-i',
-    input.localPath,
-    '--output-dir',
-    ortOutputDir,
-    '--force-overwrite'
-  ]);
 
   const resolveOutput = async (candidates: string[]) => {
     const files = await readdir(ortOutputDir);
@@ -106,7 +89,19 @@ export async function runOrtScan(input: ProjectInput): Promise<OrtScanOutput> {
     return path.join(ortOutputDir, match);
   };
 
-  const analyzerPath = await resolveOutput(analyzerPathCandidates);
+  // Run ORT analyze
+  await runOrtCommand(['analyze', '-i', input.localPath, '--output-dir', ortOutputDir]);
+
+  // Locate analyzer result for scan input
+  const analyzerResolvedPath = await resolveOutput(analyzerPathCandidates);
+  if (!analyzerResolvedPath) {
+    throw new Error('ORT_ANALYZE_OUTPUT_MISSING');
+  }
+
+  // Run ORT scan using analyzer output
+  await runOrtCommand(['scan', '-i', analyzerResolvedPath, '--output-dir', ortOutputDir]);
+
+  const analyzerPath = analyzerResolvedPath;
   const scannerPath = await resolveOutput(scannerPathCandidates);
 
   if (!analyzerPath || !scannerPath) {
