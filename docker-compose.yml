@@ -7,7 +7,7 @@ services:
     working_dir: /app
     volumes:
       - ./:/app
-    command: ["npm", "run", "scan", "--", "/path/to/project"]
+    command: ["sh", "-c", "npm run scan -- ${SCAN_PATH:-/app}"]
     environment:
       - FOSSOLOGY_API_URL=http://fossology:8081
       - FOSSOLOGY_TOKEN=${FOSSOLOGY_TOKEN:?set token}
@@ -18,6 +18,8 @@ services:
   ort:
     image: ghcr.io/oss-review-toolkit/ort:latest
     platform: linux/amd64
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["tail -f /dev/null"]
     environment:
       - ORT_CONFIG=/etc/ort.conf
     volumes:
