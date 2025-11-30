@@ -21,6 +21,10 @@ export interface OrtConfig {
   ortLogLevel?: 'info' | 'debug'; // ORT CLI supports flags --info / --debug (stacktrace optional)
   fossologyApiUrl?: string;
   fossologyToken?: string;
+  fossologyFolderId?: string | number;
+  fossologyFolderName?: string;
+  fossologyUploadType?: 'file' | 'url' | 'vcs' | 'server';
+  fossologyAccessLevel?: 'public' | 'private' | 'protected';
   fossologyPollSeconds?: number; // interval between Fossology status polls
   maxArtifactSizeBytes?: number; // cap to guard against oversized uploads
   simulateRisk?: boolean; // test-only toggle to simulate license risk failure

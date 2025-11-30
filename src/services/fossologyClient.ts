@@ -15,6 +15,12 @@ export interface FossologyConfig {
   mode?: 'stub' | 'live';
   maxArtifactSizeBytes?: number;
   pollSeconds?: number;
+  folderId?: string | number;
+  folderName?: string;
+  uploadType?: 'file' | 'url' | 'vcs' | 'server';
+  uploadName?: string;
+  uploadDescription?: string;
+  accessLevel?: 'public' | 'private' | 'protected';
 }
 
 export async function uploadSpdx(spdxPath: string, config: FossologyConfig): Promise<FossologyUploadResult> {
@@ -36,15 +42,45 @@ export async function uploadSpdx(spdxPath: string, config: FossologyConfig): Pro
 
   const fileName = path.basename(spdxPath);
   const fileBuffer = await (await import('fs/promises')).readFile(spdxPath);
+  const uploadType = config.uploadType ?? (process.env.FOSSOLOGY_UPLOAD_TYPE as FossologyConfig['uploadType']) ?? 'file';
+  const folderId =
+    config.folderId ??
+    process.env.FOSSOLOGY_FOLDER_ID ??
+    '1';
+  const folderName = config.folderName ?? process.env.FOSSOLOGY_FOLDER_NAME ?? 'uploads';
+  const uploadName = config.uploadName ?? process.env.FOSSOLOGY_UPLOAD_NAME ?? fileName;
+  const uploadDescription = config.uploadDescription ?? 'ORT SPDX upload';
+  const accessLevel = config.accessLevel ?? (process.env.FOSSOLOGY_ACCESS_LEVEL as FossologyConfig['accessLevel']) ?? 'private';
 
   // Use native FormData (Node 18+) to stream upload.
   const form = new FormData();
   form.set('file', new Blob([fileBuffer]), fileName);
+  form.set('fileInput', new Blob([fileBuffer]), uploadName);
+  form.set('folderId', `${folderId}`);
+  form.set('folderid', `${folderId}`);
+  form.set('folderName', folderName);
+  form.set('foldername', folderName);
+  form.set('uploadName', uploadName);
+  form.set('uploadname', uploadName);
+  form.set('uploadDescription', uploadDescription);
+  form.set('description', uploadDescription);
+  form.set('uploadType', uploadType);
+  form.set('uploadtype', uploadType);
+  form.set('public', accessLevel === 'public' ? 'true' : 'false');
+  form.set('accessLevel', accessLevel);
+  form.set('applyGlobal', 'false');
+  form.set('ignoreScm', 'true');
 
   logger.info('fossology_upload_start', { event: 'fossology_upload_start', file: fileName });
   const res = await fetch(`${config.apiUrl.replace(/\/$/, '')}/api/v1/uploads`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${config.token}` },
+    headers: {
+      Authorization: `Bearer ${config.token}`,
+      uploadType,
+      folderId: `${folderId}`,
+      uploadDescription,
+      public: accessLevel
+    },
     body: form
   });
 

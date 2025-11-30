@@ -85,3 +85,46 @@ curl -v \
 
 - `folderId=1` 是 root；若有自訂資料夾請替換成對應 ID。
 - 如果在 docker compose 內呼叫，可將 URL 改為 `http://fossology:8081/repo/api/v1/uploads`。
+
+## 只跑後半段（已有 ORT 輸出時的 Fossology 上傳）
+
+- 要上傳哪個檔案？請用 ORT 產生的「scan 輸出」（scanner/SPDX），常見檔名：
+  - `.../ort/scan-result.spdx.json`（或 `scan-result.yml` / `scanner.spdx.json` 依版本而定）
+  - **不要** 用 analyzer-result，Fossology 需要 scan 的 SPDX。
+
+### Node 腳本（用現有檔案）
+```bash
+export FOSSOLOGY_MODE=live
+export FOSSOLOGY_API_URL=http://localhost:8081/repo
+export FOSSOLOGY_TOKEN=<token>
+export FOSSOLOGY_FOLDER_ID=1          # 目標資料夾 ID，可換
+export FOSSOLOGY_FOLDER_NAME=uploads  # 可選
+export FOSSOLOGY_UPLOAD_TYPE=file     # 預設 file
+
+node scripts/test-fossology-upload.js /absolute/path/to/ort/scan-result.spdx.json
+# 成功會回 uploadId；若要查狀態可用 fetchFossologyStatus 搭配相同 env。
+```
+
+### curl 範例（只替換 FILE 為你的 scan-result）
+```bash
+export FOSSOLOGY_API_URL=http://localhost:8081/repo
+export FOSSOLOGY_TOKEN=<token>
+export FILE=/absolute/path/to/ort/scan-result.spdx.json
+
+curl -v \
+  -H "Authorization: Bearer ${FOSSOLOGY_TOKEN}" \
+  -H "uploadType: file" \
+  -H "folderId: ${FOSSOLOGY_FOLDER_ID:-1}" \
+  -H "uploadDescription: ORT SPDX upload" \
+  -H "public: private" \
+  -F "fileInput=@${FILE};filename=$(basename \"${FILE}\")" \
+  -F "folderId=${FOSSOLOGY_FOLDER_ID:-1}" \
+  -F "folderName=${FOSSOLOGY_FOLDER_NAME:-uploads}" \
+  -F "uploadName=$(basename \"${FILE}\")" \
+  -F "uploadDescription=ORT SPDX upload" \
+  -F "uploadType=file" \
+  -F "public=false" \
+  "${FOSSOLOGY_API_URL%/}/api/v1/uploads"
+```
+
+- 只需把 ORT 的 scan-result 檔案路徑帶入即可完成後半段上傳；在 compose 內可把 URL 換成 `http://fossology:8081/repo/api/v1/uploads`。

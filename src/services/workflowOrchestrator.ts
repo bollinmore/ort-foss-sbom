@@ -103,7 +103,11 @@ export async function orchestrateScan(input: ProjectInput): Promise<OrchestrateR
     token: input.config?.fossologyToken || process.env.FOSSOLOGY_TOKEN || 'test-token',
     mode: input.config?.integrationMode === 'live' ? 'live' : 'stub',
     maxArtifactSizeBytes: input.config?.maxArtifactSizeBytes ?? 500 * 1024 * 1024,
-    pollSeconds: input.config?.fossologyPollSeconds ?? 5
+    pollSeconds: input.config?.fossologyPollSeconds ?? 5,
+    folderId: input.config?.fossologyFolderId ?? process.env.FOSSOLOGY_FOLDER_ID ?? '1',
+    folderName: input.config?.fossologyFolderName ?? process.env.FOSSOLOGY_FOLDER_NAME ?? 'uploads',
+    uploadType: input.config?.fossologyUploadType ?? (process.env.FOSSOLOGY_UPLOAD_TYPE as any) ?? 'file',
+    accessLevel: input.config?.fossologyAccessLevel ?? (process.env.FOSSOLOGY_ACCESS_LEVEL as any) ?? 'private'
   });
   logger.info('upload_scheduled', { jobId, event: 'upload_scheduled', data: upload });
   jobStore.update(jobId, 'uploading', 'upload', 60);
