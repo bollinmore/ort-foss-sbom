@@ -46,12 +46,10 @@
    - Follow ORT docs to download the binary/JAR.  
    - Export `ORT_CLI_PATH=/path/to/ort` or place on PATH.
 
-4. **Run live scan**  
+4. **Run live scan（含自動載入 .env + Docker ORT wrapper）**  
+   - 準備 `.env`：`INTEGRATION_MODE=live`, `FOSSOLOGY_MODE=live`, `FOSSOLOGY_API_URL`, `FOSSOLOGY_TOKEN`，如需可設 `ORT_CLI_PATH`。  
+   - 預設會使用 `bin/ort-docker.sh` 包裝 ORT Docker 映像（可用 `ORT_IMAGE` 覆寫）。  
    ```
-   INTEGRATION_MODE=live \
-   FOSSOLOGY_MODE=live \
-   FOSSOLOGY_API_URL=http://localhost:8081 \
-   FOSSOLOGY_TOKEN=<token> \
-   npm run scan /absolute/path/to/project
+   ./scripts/scan-live.sh /absolute/path/to/project
    ```
    Outputs real ORT/Fossology artifacts under `./out/<jobId>/`.
