@@ -3,6 +3,7 @@ version: "3.9"
 services:
   api:
     image: node:18
+    platform: linux/amd64
     working_dir: /app
     volumes:
       - ./:/app
@@ -16,6 +17,7 @@ services:
 
   ort:
     image: ghcr.io/oss-review-toolkit/ort:latest
+    platform: linux/amd64
     environment:
       - ORT_CONFIG=/etc/ort.conf
     volumes:
@@ -24,6 +26,7 @@ services:
 
   fossology:
     image: fossology/fossology:latest
+    platform: linux/amd64
     environment:
       - FOSSOLOGY_ADMIN_USERNAME=admin
       - FOSSOLOGY_ADMIN_PASSWORD=admin

@@ -40,6 +40,7 @@
    ```
    - Fossology UI/API: http://localhost:8081 (credentials in compose env)
    - ORT CLI image: `ghcr.io/oss-review-toolkit/ort:latest`
+   - On Mac ARM/Apple Silicon: images are pinned to `platform: linux/amd64` in compose; enable Docker Desktop Rosetta/QEMU for emulation.
 
 3. **Install ORT CLI locally (alternative to container)**  
    - Follow ORT docs to download the binary/JAR.  
