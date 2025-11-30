@@ -49,7 +49,7 @@
    - Export `ORT_CLI_PATH=/path/to/ort` or place on PATH.
 
 4. **Run live scan（含自動載入 .env + Docker ORT wrapper）**  
-   - 準備 `.env`：`INTEGRATION_MODE=live`, `FOSSOLOGY_MODE=live`, `FOSSOLOGY_API_URL`, `FOSSOLOGY_TOKEN`，如需可設 `ORT_CLI_PATH`，`ORT_LOG_LEVEL=info|debug`（`ORT_STACKTRACE=1` 如需）。  
+   - 準備 `.env`：`INTEGRATION_MODE=live`, `FOSSOLOGY_MODE=live`, `FOSSOLOGY_API_URL`（官方映像 API 基底通常是 `http://<host>:8081/repo`，不要附 `/api/v1`，我們會自動加上），`FOSSOLOGY_TOKEN`，如需可設 `ORT_CLI_PATH`，`ORT_LOG_LEVEL=info|debug`（`ORT_STACKTRACE=1` 如需）。  
    - 預設會使用 `bin/ort-docker.sh` 包裝 ORT Docker 映像（可用 `ORT_IMAGE` 覆寫）。  
    ```
    ./scripts/scan-live.sh /absolute/path/to/project
