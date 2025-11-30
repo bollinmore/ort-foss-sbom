@@ -11,7 +11,10 @@
  *
  * Optional env:
  *   FOSSOLOGY_FOLDER_NAME (folder to create/use, default "uploads")
+ *   FOSSOLOGY_FOLDER_ID   (numeric folder id; default 1/root)
  *   FOSSOLOGY_UPLOAD_NAME (override upload name; defaults to file basename)
+ *   FOSSOLOGY_UPLOAD_TYPE (file|url|vcs|server; default file)
+ *   FOSSOLOGY_ACCESS_LEVEL (public|private|protected; default private)
  */
 
 const fs = require('fs/promises');
@@ -64,17 +67,29 @@ async function main() {
   const fileBuf = await fs.readFile(filePath);
   const uploadName = process.env.FOSSOLOGY_UPLOAD_NAME || path.basename(filePath);
   const folderName = process.env.FOSSOLOGY_FOLDER_NAME || 'uploads';
-  const uploadType = process.env.FOSSOLOGY_UPLOAD_TYPE || 'repo';
+  // Fossology expects uploadType to be one of: file|url|vcs|server. Use file by default.
+  const uploadType = process.env.FOSSOLOGY_UPLOAD_TYPE || 'file';
+  // folderId is required by the API; 1 is the root folder.
+  const folderId = process.env.FOSSOLOGY_FOLDER_ID || '1';
+  const accessLevel = process.env.FOSSOLOGY_ACCESS_LEVEL || 'private';
 
   const form = new FormData();
   form.set('fileInput', new Blob([fileBuf]), uploadName);
+  // Fossology is case-sensitive on form keys; send both common variants.
+  form.set('folderId', folderId);
+  form.set('folderid', folderId);
+  form.set('foldername', folderName);
   form.set('folderName', folderName);
+  form.set('uploadname', uploadName);
+  form.set('uploadName', uploadName);
+  form.set('description', 'Fossology upload smoke test');
   form.set('uploadDescription', 'Fossology upload smoke test');
   // Send both cases to satisfy Fossology API variants.
   form.set('uploadType', uploadType);
   form.set('uploadtype', uploadType);
-  // Keep uploads private by default.
+  // Keep uploads private by default; accessLevel is another supported flag.
   form.set('public', 'false');
+  form.set('accessLevel', accessLevel);
 
   // Fossology API base should be the host/root (e.g., http://127.0.0.1:8081 or http://fossology:8081/repo).
   // If the user passed /api/v1 already, avoid double-appending.
@@ -105,11 +120,20 @@ async function main() {
   let lastText = '';
   let lastErr = '';
   for (const endpoint of candidateEndpoints) {
-    console.log(`Uploading to ${endpoint} as ${uploadName} (folder: ${folderName})`);
+    console.log(
+      `Uploading to ${endpoint} as ${uploadName} (folder: ${folderName} | folderId: ${folderId} | access: ${accessLevel} | type: ${uploadType})`
+    );
     try {
+      const headers = {
+        Authorization: `Bearer ${token}`,
+        uploadType,
+        folderId,
+        uploadDescription: 'Fossology upload smoke test',
+        public: accessLevel
+      };
       res = await fetch(endpoint, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers,
         body: form
       });
       lastText = await res.text();
@@ -142,7 +166,8 @@ async function main() {
 
   if (!res || !res.ok) {
     const statusMsg = res ? `${res.status} ${res.statusText}` : lastErr || 'unreachable';
-    console.error(`Upload failed: ${statusMsg}\n${lastText}`);
+    const attempted = candidateEndpoints.join(', ');
+    console.error(`Upload failed: ${statusMsg}\nTried endpoints: ${attempted}\nResponse: ${lastText || '(empty)'}`);
     process.exit(1);
   }
 

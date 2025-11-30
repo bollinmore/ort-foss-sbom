@@ -55,7 +55,33 @@
    ./scripts/scan-live.sh /absolute/path/to/project
    ```
    Outputs real ORT/Fossology artifacts under `./out/<jobId>/`.
-   - 若需要即時 ORT 日誌：`npm run scan -- -v /absolute/path/to/project`（或在 `.env` 設 `INTEGRATION_MODE=live` 後使用 `scripts/scan-live.sh` 搭配 `-v`）。
+- 若需要即時 ORT 日誌：`npm run scan -- -v /absolute/path/to/project`（或在 `.env` 設 `INTEGRATION_MODE=live` 後使用 `scripts/scan-live.sh` 搭配 `-v`）。
 
 ### Default ORT excludes
 - Repo root 提供 `.ort.yml`，預設排除 `.venv/**`（虛擬環境 / jupyter labextensions），避免缺少 lockfile 的管理外依賴導致 ORT 失敗。
+
+## Fossology API：curl 上傳範例（使用本 repo 的 sample.zip）
+
+```bash
+export FOSSOLOGY_API_URL=http://localhost:8081/repo
+export FOSSOLOGY_TOKEN=<UI 產生的 API Token>
+export FILE="$(pwd)/sample.zip"   # 本倉庫根目錄提供的示例檔案
+
+curl -v \
+  -H "Authorization: Bearer ${FOSSOLOGY_TOKEN}" \
+  -H "uploadType: file" \
+  -H "folderId: 1" \
+  -H "uploadDescription: cli upload via curl" \
+  -H "public: private" \
+  -F "fileInput=@${FILE};filename=$(basename "${FILE}")" \
+  -F "folderId=1" \
+  -F "folderName=uploads" \
+  -F "uploadName=$(basename "${FILE}")" \
+  -F "uploadDescription=cli upload via curl" \
+  -F "uploadType=file" \
+  -F "public=false" \
+  "${FOSSOLOGY_API_URL%/}/api/v1/uploads"
+```
+
+- `folderId=1` 是 root；若有自訂資料夾請替換成對應 ID。
+- 如果在 docker compose 內呼叫，可將 URL 改為 `http://fossology:8081/repo/api/v1/uploads`。

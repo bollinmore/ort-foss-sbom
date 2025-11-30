@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "description": "Automated ORT + Fossology compliance scanner (offline-first) with CLI/API orchestration.",
   "license": "MIT",
-  "type": "module",
   "scripts": {
     "build": "tsc --project tsconfig.json",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
