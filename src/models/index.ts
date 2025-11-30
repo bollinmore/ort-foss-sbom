@@ -18,6 +18,7 @@ export interface OrtConfig {
    */
   integrationMode?: 'fixture' | 'live';
   ortCliPath?: string; // optional override, otherwise resolved from PATH
+  ortLogLevel?: 'info' | 'debug'; // ORT CLI supports flags --info / --debug (stacktrace optional)
   fossologyApiUrl?: string;
   fossologyToken?: string;
   fossologyPollSeconds?: number; // interval between Fossology status polls

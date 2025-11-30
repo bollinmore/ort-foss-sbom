@@ -19,6 +19,7 @@
 
 4. **Flags & defaults**  
 - CLI: `scan --path <abs> --config <file?> --downloader-enabled=false (default) --output <dir> (default ./out)`  
+- ORT log level: set `ORT_LOG_LEVEL=info|debug` (optional `ORT_STACKTRACE=1`) in env; defaults to tool’s standard output.  
 - Verbose streaming (ORT stdout/stderr): add `-v` → `npm run scan -- -v /abs/path`. Default is quiet.  
 - SIMULATE_RISK=1 (test-only) forces risk exit for CI gating validation.
 
@@ -48,7 +49,7 @@
    - Export `ORT_CLI_PATH=/path/to/ort` or place on PATH.
 
 4. **Run live scan（含自動載入 .env + Docker ORT wrapper）**  
-   - 準備 `.env`：`INTEGRATION_MODE=live`, `FOSSOLOGY_MODE=live`, `FOSSOLOGY_API_URL`, `FOSSOLOGY_TOKEN`，如需可設 `ORT_CLI_PATH`。  
+   - 準備 `.env`：`INTEGRATION_MODE=live`, `FOSSOLOGY_MODE=live`, `FOSSOLOGY_API_URL`, `FOSSOLOGY_TOKEN`，如需可設 `ORT_CLI_PATH`，`ORT_LOG_LEVEL=info|debug`（`ORT_STACKTRACE=1` 如需）。  
    - 預設會使用 `bin/ort-docker.sh` 包裝 ORT Docker 映像（可用 `ORT_IMAGE` 覆寫）。  
    ```
    ./scripts/scan-live.sh /absolute/path/to/project

@@ -32,6 +32,7 @@ export async function runScanCli(argv = process.argv.slice(2)) {
         integrationMode: process.env.INTEGRATION_MODE === 'live' ? 'live' : 'fixture',
         outputDir: process.env.OUTPUT_DIR,
         ortCliPath: process.env.ORT_CLI_PATH,
+        ortLogLevel: (process.env.ORT_LOG_LEVEL as any) || undefined,
         fossologyApiUrl: process.env.FOSSOLOGY_API_URL,
         fossologyToken: process.env.FOSSOLOGY_TOKEN,
         verbose
