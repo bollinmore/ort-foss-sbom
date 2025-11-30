@@ -1,11 +1,10 @@
 import { access, copyFile, mkdir, readdir } from 'fs/promises';
 import path from 'path';
-import { execFile } from 'child_process';
+import { spawn } from 'child_process';
 import { promisify } from 'util';
 import { OrtConfig, ProjectInput } from '../models';
 import { createLogger } from '../lib/logger';
 
-const execFileAsync = promisify(execFile);
 const logger = createLogger({ stage: 'ort_runner' });
 
 export interface OrtScanOutput {
@@ -65,19 +64,55 @@ export async function runOrtScan(input: ProjectInput): Promise<OrtScanOutput> {
     'scanner.spdx.json'
   ];
 
+  const verbose = config.verbose ?? false;
+
   const runOrtCommand = async (args: string[]) => {
     const cmd = `${ortCliPath} ${args.join(' ')}`;
     logger.info('ort_exec', { event: 'ort_exec', cmd });
-    try {
-      return await execFileAsync(ortCliPath, args, {
-        timeout: timeoutMs,
-        maxBuffer: 10 * 1024 * 1024,
-        env: { ...process.env, JAVA_TOOL_OPTIONS: '-Djava.awt.headless=true' }
+    const child = spawn(ortCliPath, args, {
+      env: { ...process.env, JAVA_TOOL_OPTIONS: '-Djava.awt.headless=true' }
+    });
+
+    let stdoutBuf = '';
+    let stderrBuf = '';
+
+    const timer = setTimeout(() => {
+      child.kill('SIGKILL');
+    }, timeoutMs);
+
+    child.stdout.on('data', (chunk) => {
+      const text = chunk.toString();
+      stdoutBuf += text;
+      if (verbose) {
+        logger.info('ort_stdout', { event: 'ort_stdout' }, text.trim());
+      }
+    });
+
+    child.stderr.on('data', (chunk) => {
+      const text = chunk.toString();
+      stderrBuf += text;
+      if (verbose) {
+        logger.info('ort_stderr', { event: 'ort_stderr' }, text.trim());
+      }
+    });
+
+    return await new Promise<void>((resolve, reject) => {
+      child.on('error', (err) => {
+        clearTimeout(timer);
+        logger.error('ort_exec_failed', { event: 'ort_exec_failed', cmd }, { stderr: err?.message });
+        reject(err);
       });
-    } catch (err: any) {
-      logger.error('ort_exec_failed', { event: 'ort_exec_failed', cmd }, { stderr: err?.stderr, stdout: err?.stdout });
-      throw err;
-    }
+      child.on('close', (code) => {
+        clearTimeout(timer);
+        if (code === 0) {
+          resolve();
+        } else {
+          const err = new Error(`ORT command failed (${code}): ${cmd}`);
+          logger.error('ort_exec_failed', { event: 'ort_exec_failed', cmd }, { stdout: stdoutBuf, stderr: stderrBuf });
+          reject(err);
+        }
+      });
+    });
   };
 
   const resolveOutput = async (candidates: string[]) => {
@@ -90,7 +125,9 @@ export async function runOrtScan(input: ProjectInput): Promise<OrtScanOutput> {
   };
 
   // Run ORT analyze
+  logger.info('ort_analyze_start', { event: 'ort_analyze_start' });
   await runOrtCommand(['analyze', '-i', input.localPath, '--output-dir', ortOutputDir]);
+  logger.info('ort_analyze_complete', { event: 'ort_analyze_complete' });
 
   // Locate analyzer result for scan input
   const analyzerResolvedPath = await resolveOutput(analyzerPathCandidates);
@@ -99,7 +136,9 @@ export async function runOrtScan(input: ProjectInput): Promise<OrtScanOutput> {
   }
 
   // Run ORT scan using analyzer output
+  logger.info('ort_scan_start', { event: 'ort_scan_start' });
   await runOrtCommand(['scan', '-i', analyzerResolvedPath, '--output-dir', ortOutputDir]);
+  logger.info('ort_scan_complete', { event: 'ort_scan_complete' });
 
   const analyzerPath = analyzerResolvedPath;
   const scannerPath = await resolveOutput(scannerPathCandidates);

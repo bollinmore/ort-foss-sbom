@@ -23,6 +23,7 @@ export interface OrtConfig {
   fossologyPollSeconds?: number; // interval between Fossology status polls
   maxArtifactSizeBytes?: number; // cap to guard against oversized uploads
   simulateRisk?: boolean; // test-only toggle to simulate license risk failure
+  verbose?: boolean; // stream ORT stdout/stderr
 }
 
 export interface ProjectInput {

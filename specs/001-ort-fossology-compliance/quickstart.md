@@ -19,6 +19,7 @@
 
 4. **Flags & defaults**  
 - CLI: `scan --path <abs> --config <file?> --downloader-enabled=false (default) --output <dir> (default ./out)`  
+- Verbose streaming (ORT stdout/stderr): add `-v` → `npm run scan -- -v /abs/path`. Default is quiet.  
 - SIMULATE_RISK=1 (test-only) forces risk exit for CI gating validation.
 
 5. **Fixture refresh & downloader enforcement**  
@@ -53,6 +54,7 @@
    ./scripts/scan-live.sh /absolute/path/to/project
    ```
    Outputs real ORT/Fossology artifacts under `./out/<jobId>/`.
+   - 若需要即時 ORT 日誌：`npm run scan -- -v /absolute/path/to/project`（或在 `.env` 設 `INTEGRATION_MODE=live` 後使用 `scripts/scan-live.sh` 搭配 `-v`）。
 
 ### Default ORT excludes
 - Repo root 提供 `.ort.yml`，預設排除 `.venv/**`（虛擬環境 / jupyter labextensions），避免缺少 lockfile 的管理外依賴導致 ORT 失敗。

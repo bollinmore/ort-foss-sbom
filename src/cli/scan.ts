@@ -6,7 +6,17 @@ import path from 'path';
 const logger = createLogger({ stage: 'cli', event: 'scan' });
 
 export async function runScanCli(argv = process.argv.slice(2)) {
-  const [localPath] = argv;
+  let verbose = false;
+  const args: string[] = [];
+  for (const arg of argv) {
+    if (arg === '-v' || arg === '--verbose') {
+      verbose = true;
+      continue;
+    }
+    args.push(arg);
+  }
+
+  const [localPath] = args;
   if (!localPath) {
     logger.error('missing path', { code: 'INVALID_PATH' });
     process.exitCode = 1;
@@ -23,7 +33,8 @@ export async function runScanCli(argv = process.argv.slice(2)) {
         outputDir: process.env.OUTPUT_DIR,
         ortCliPath: process.env.ORT_CLI_PATH,
         fossologyApiUrl: process.env.FOSSOLOGY_API_URL,
-        fossologyToken: process.env.FOSSOLOGY_TOKEN
+        fossologyToken: process.env.FOSSOLOGY_TOKEN,
+        verbose
       }
     });
     logger.info('scan_completed', {
