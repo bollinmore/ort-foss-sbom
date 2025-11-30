@@ -89,8 +89,16 @@ export async function uploadSpdx(spdxPath: string, config: FossologyConfig): Pro
     throw new Error(`FOSSOLOGY_UPLOAD_FAILED:${res.status}:${text}`);
   }
 
-  const data = (await res.json()) as { uploadId?: number; id?: number; status?: FossologyUploadResult['status'] };
-  return { uploadId: data.uploadId ?? data.id ?? 0, status: data.status ?? 'scheduled' };
+  const data = (await res.json()) as { uploadId?: number; id?: number; status?: FossologyUploadResult['status']; message?: unknown };
+  // Some Fossology responses return {code:201, message:<uploadId>}
+  const parsedMessageId =
+    typeof data?.message === 'number'
+      ? data.message
+      : typeof data?.message === 'string'
+        ? parseInt(data.message, 10)
+        : undefined;
+  const uploadId = data.uploadId ?? data.id ?? parsedMessageId ?? 0;
+  return { uploadId, status: data.status ?? 'scheduled' };
 }
 
 export async function fetchFossologyStatus(uploadId: number, config?: FossologyConfig): Promise<Record<string, unknown>> {
@@ -108,7 +116,8 @@ export async function fetchFossologyStatus(uploadId: number, config?: FossologyC
   const token = config?.token ?? process.env.FOSSOLOGY_TOKEN;
   if (!apiUrl || !token) throw new Error('MISSING_FOSSOLOGY_CONFIG');
 
-  const res = await fetch(`${apiUrl.replace(/\/$/, '')}/api/v1/uploads/${uploadId}/report`, {
+  // Use summary endpoint to get upload status; avoids 404s on report path.
+  const res = await fetch(`${apiUrl.replace(/\/$/, '')}/api/v1/uploads/${uploadId}/summary`, {
     method: 'GET',
     headers: { Authorization: `Bearer ${token}` }
   });
