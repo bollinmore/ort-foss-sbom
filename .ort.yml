@@ -9,3 +9,13 @@ excludes:
     - pattern: ".venv/**"
       reason: "TEST_TOOL_OF"
       comment: "Exclude virtualenv (root-level) to avoid unmanaged node deps without lockfiles."
+    - pattern: "**/.git/**"
+      reason: "OTHER"
+      comment: "Skip VCS metadata."
+    - pattern: "**/.svn/**"
+      reason: "OTHER"
+      comment: "Skip VCS metadata."
+  scopes:
+    - pattern: ".*"
+      reason: "TEST_DEPENDENCY_OF"
+      comment: "Skip dependency scopes to avoid downloading third-party artifacts during scan."
