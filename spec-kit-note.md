@@ -1,4 +1,4 @@
-# 001-
+# 001-ort-fossology-compliance
 
 ## constitution
 
@@ -53,6 +53,53 @@ Quickstart 測試場景：
 1. npm run scan /path/to/project  → 產生 report.html
 2. 驗證 SBOM 套件數 >0 且 Fossology license count >0
 3. CI 環境端到端測試通過
+
+## checklist
+
+## tasks
+
+## analyze
+
+## implement
+
+---
+
+# 002-
+
+## constitution
+
+## specify
+
+由於本專案採用 Inno Setup 打包安裝檔，且目標是要詳細描述安裝在系統中的每個實體檔案，包括來自安裝包的資源、配置、以及各檔案的授權和類型資訊。因此，需要一套工具能自動解析 Inno Setup 安裝檔（Setup.exe），並将其內部包含的所有檔案完整還原，並根據檔案名稱、描述資源、二進制元資料（如版本資訊、資源描述）和 README/License 檔案等判斷每個檔案的屬性和授權狀況。
+此方案的核心目的是：產生一份詳細的 SBOM，反映每一個安裝到用戶端的實體檔案的資訊，支持針對 Windows 安裝程式的供應鏈安全、法律遵從與資產管理。
+
+## clarify
+
+## plan
+
+技術方案
+  - 解包工具：採用專門針對 Inno Setup 的解包工具，如  Innounp 、 InnoExtractor 或  InnoUnpacker ，提取安裝包內所有檔案與資料。
+  - 檔案類型判斷：針對解包出的檔案，進行多維度判斷：
+  - 依照檔案名稱規則（副檔名、版本字串）。
+  - 解析資源文件（如資源描述、ICON、META資源）。
+  - 提取可執行檔中的資訊（版本、描述、內嵌資源）。
+  - 搜尋 License 文件或 README 文件，導出授權條款與說明。
+  - 自動化流程：建立一個 CLI 介面，允許使用者指定 Inno Setup 安裝包路徑和輸出 SBOM 的位置。
+  - SBOM 格式：輸出符合 SPDX 2.3 標準的 JSON 或 YAML，可以包括：
+  - 每個解包出的檔案名稱、路徑。
+  - 檔案類型與狀態描述（例如：執行檔、DLL、資源、配置檔等）。
+  - 相關授權資訊（若解析到 License/README）。
+  - 驗證與測試：建立測試範例，驗證工具對多種不同版本 Inno Setup 打包安裝檔的兼容性與準確性。
+
+流程步驟
+  - 輸入 Inno Setup 安裝檔（Setup.exe）。
+  - 使用 InnoUnpacker 或 Innounp 解析還原內容。
+  - 遍歷所有提取檔案，依循規則辨識檔案類型及元資料。
+  - 搜集可能的授權、描述資源、內部資訊，生成詳細 SBOM。
+  - 輸出標準化符合 SPDX 格式的 SBOM 文件。
+  - （可選）針對重要檔案進行安全或授權風險評估。
+
+此規格確保針對 Inno Setup 打包格式提供一個完整可靠的解決方案，能讓用戶所有安裝在目標系統中的實體檔案都能被詳細描述並進行合規風險管控。
 
 ## checklist
 
