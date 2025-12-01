@@ -24,6 +24,24 @@ resolve_abs_path() {
   fi
 }
 
+generate_job_id() {
+  if [[ -n "${JOB_ID:-}" ]]; then
+    echo "${JOB_ID}"
+    return
+  fi
+
+  local ts=""
+  if command -v node >/dev/null 2>&1; then
+    ts="$(node -e 'console.log(Date.now())')" || true
+  fi
+
+  if [[ -z "${ts}" ]]; then
+    ts="$(date +%s)"
+  fi
+
+  echo "job-${ts}"
+}
+
 if [[ $# -lt 1 ]]; then
   usage
   exit 1
@@ -46,10 +64,15 @@ if [[ ! -d "${TARGET_PATH}" ]]; then
   exit 1
 fi
 
-OUTPUT_DIR="${OUTPUT_DIR:-${REPO_ROOT}/out/ort}"
+OUTPUT_BASE="${OUTPUT_DIR:-${REPO_ROOT}/out}"
+JOB_ID="$(generate_job_id)"
+JOB_DIR="${OUTPUT_BASE}/${JOB_ID}"
+OUTPUT_DIR="${JOB_DIR}/ort"
 ORT_CLI="${ORT_CLI_PATH:-${REPO_ROOT}/bin/ort-docker.sh}"
 
 mkdir -p "${OUTPUT_DIR}"
+echo "Job: ${JOB_ID}"
+echo "Output directory: ${OUTPUT_DIR}"
 
 LOG_FLAGS=()
 case "${ORT_LOG_LEVEL:-}" in
