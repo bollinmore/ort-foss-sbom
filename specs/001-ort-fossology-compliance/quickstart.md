@@ -1,0 +1,130 @@
+# Quickstart: Automated ORT + Fossology Compliance Scanner
+
+1. **Run local scan**  
+   ```bash
+   npm run scan /path/to/project
+   ```  
+   Generates `report.html` and SPDX artifacts in the output directory.
+
+2. **Validate outputs**  
+   - SBOM package count > 0  
+   - Fossology license count > 0  
+   - Logs show downloader disabled and no remote fetches
+
+3. **CI requirements**  
+- Execute the scan command in CI with project path and credentials; downloader remains disabled.  
+- CI job MUST fail within 1 minute if licenses are incompatible or unknown; exit code 1 and merged report artifacts must be published.  
+- Runtime MUST be measured against the <15m p95 target on the representative fixture repo.  
+- Publish artifacts: `./out/<jobId>/report.html`, `report.json`, `sbom.spdx.json` for downstream review. Include status polling (≤30s freshness) and logs with stage + jobId + event + code.
+
+4. **Flags & defaults**  
+- CLI: `scan --path <abs> --config <file?> --downloader-enabled=false (default) --output <dir> (default ./out)`  
+- ORT log level: set `ORT_LOG_LEVEL=info|debug` (optional `ORT_STACKTRACE=1`) in env; defaults to tool’s standard output.  
+- Verbose streaming (ORT stdout/stderr): add `-v` → `npm run scan -- -v /abs/path`. Default is quiet.  
+- SIMULATE_RISK=1 (test-only) forces risk exit for CI gating validation.
+
+5. **Fixture refresh & downloader enforcement**  
+- Fixture refresh: update `tests/fixtures/analyzer.json`, `scanner.spdx.json`, and `fossology-status.json` when upstream tools change; keep copies under version control for deterministic tests.  
+- Downloader enforcement: ensure `downloaderEnabled` stays false in all environments; CI must block if set true.  
+- Secrets: provide credentials via env/CI secrets; never log or return secret values.
+
+## Real environment setup (ORT + Fossology)
+
+1. **Env file**: copy `.env.sample` to `.env` and set:
+   - `INTEGRATION_MODE=live`
+   - `ORT_CLI_PATH` (if not on PATH)
+   - `FOSSOLOGY_MODE=live`, `FOSSOLOGY_API_URL`, `FOSSOLOGY_TOKEN`
+   - Optional: `OUTPUT_DIR`, `FOSSOLOGY_POLL_SECONDS`, `MAX_ARTIFACT_SIZE_BYTES`
+
+2. **Docker Compose (local stack)**  
+   ```
+   docker-compose up -d fossology ort
+   ```
+   - Fossology UI/API: http://localhost:8081 (credentials in compose env)
+   - ORT CLI image: `ghcr.io/oss-review-toolkit/ort:latest`
+   - On Mac ARM/Apple Silicon: images are pinned to `platform: linux/amd64` in compose; enable Docker Desktop Rosetta/QEMU for emulation.
+
+3. **Install ORT CLI locally (alternative to container)**  
+   - Follow ORT docs to download the binary/JAR.  
+   - Export `ORT_CLI_PATH=/path/to/ort` or place on PATH.
+
+4. **Run live scan（含自動載入 .env + Docker ORT wrapper）**  
+   - 準備 `.env`：`INTEGRATION_MODE=live`, `FOSSOLOGY_MODE=live`, `FOSSOLOGY_API_URL`（官方映像 API 基底通常是 `http://<host>:8081/repo`，不要附 `/api/v1`，我們會自動加上），`FOSSOLOGY_TOKEN`，如需可設 `ORT_CLI_PATH`，`ORT_LOG_LEVEL=info|debug`（`ORT_STACKTRACE=1` 如需）。  
+   - 預設會使用 `bin/ort-docker.sh` 包裝 ORT Docker 映像（可用 `ORT_IMAGE` 覆寫）。  
+   ```
+   ./scripts/scan-live.sh /absolute/path/to/project
+   ```
+   Outputs real ORT/Fossology artifacts under `./out/<jobId>/`.
+- 若需要即時 ORT 日誌：`npm run scan -- -v /absolute/path/to/project`（或在 `.env` 設 `INTEGRATION_MODE=live` 後使用 `scripts/scan-live.sh` 搭配 `-v`）。
+
+### Default ORT excludes
+- Repo root 提供 `.ort.yml`，預設排除 `.venv/**`（虛擬環境 / jupyter labextensions），避免缺少 lockfile 的管理外依賴導致 ORT 失敗。
+
+## Fossology API：curl 上傳範例（使用本 repo 的 sample.zip）
+
+```bash
+export FOSSOLOGY_API_URL=http://localhost:8081/repo
+export FOSSOLOGY_TOKEN=<UI 產生的 API Token>
+export FILE="$(pwd)/sample.zip"   # 本倉庫根目錄提供的示例檔案
+
+curl -v \
+  -H "Authorization: Bearer ${FOSSOLOGY_TOKEN}" \
+  -H "uploadType: file" \
+  -H "folderId: 1" \
+  -H "uploadDescription: cli upload via curl" \
+  -H "public: private" \
+  -F "fileInput=@${FILE};filename=$(basename "${FILE}")" \
+  -F "folderId=1" \
+  -F "folderName=uploads" \
+  -F "uploadName=$(basename "${FILE}")" \
+  -F "uploadDescription=cli upload via curl" \
+  -F "uploadType=file" \
+  -F "public=false" \
+  "${FOSSOLOGY_API_URL%/}/api/v1/uploads"
+```
+
+- `folderId=1` 是 root；若有自訂資料夾請替換成對應 ID。
+- 如果在 docker compose 內呼叫，可將 URL 改為 `http://fossology:8081/repo/api/v1/uploads`。
+
+## 只跑後半段（已有 ORT 輸出時的 Fossology 上傳）
+
+- 要上傳哪個檔案？請用 ORT 產生的「scan 輸出」（scanner/SPDX），常見檔名：
+  - `.../ort/scan-result.spdx.json`（或 `scan-result.yml` / `scanner.spdx.json` 依版本而定）
+  - **不要** 用 analyzer-result，Fossology 需要 scan 的 SPDX。
+
+### Node 腳本（用現有檔案）
+```bash
+export FOSSOLOGY_MODE=live
+export FOSSOLOGY_API_URL=http://localhost:8081/repo
+export FOSSOLOGY_TOKEN=<token>
+export FOSSOLOGY_FOLDER_ID=1          # 目標資料夾 ID，可換
+export FOSSOLOGY_FOLDER_NAME=uploads  # 可選
+export FOSSOLOGY_UPLOAD_TYPE=file     # 預設 file
+
+node scripts/test-fossology-upload.js /absolute/path/to/ort/scan-result.spdx.json
+# 成功會回 uploadId；若要查狀態可用 fetchFossologyStatus 搭配相同 env。
+```
+
+### curl 範例（只替換 FILE 為你的 scan-result）
+```bash
+export FOSSOLOGY_API_URL=http://localhost:8081/repo
+export FOSSOLOGY_TOKEN=<token>
+export FILE=/absolute/path/to/ort/scan-result.spdx.json
+
+curl -v \
+  -H "Authorization: Bearer ${FOSSOLOGY_TOKEN}" \
+  -H "uploadType: file" \
+  -H "folderId: ${FOSSOLOGY_FOLDER_ID:-1}" \
+  -H "uploadDescription: ORT SPDX upload" \
+  -H "public: private" \
+  -F "fileInput=@${FILE};filename=$(basename \"${FILE}\")" \
+  -F "folderId=${FOSSOLOGY_FOLDER_ID:-1}" \
+  -F "folderName=${FOSSOLOGY_FOLDER_NAME:-uploads}" \
+  -F "uploadName=$(basename \"${FILE}\")" \
+  -F "uploadDescription=ORT SPDX upload" \
+  -F "uploadType=file" \
+  -F "public=false" \
+  "${FOSSOLOGY_API_URL%/}/api/v1/uploads"
+```
+
+- 只需把 ORT 的 scan-result 檔案路徑帶入即可完成後半段上傳；在 compose 內可把 URL 換成 `http://fossology:8081/repo/api/v1/uploads`。

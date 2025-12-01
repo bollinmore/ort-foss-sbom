@@ -1,0 +1,13 @@
+{
+  "summary": {
+    "projects": 1,
+    "packages": 3
+  },
+  "projects": [
+    {
+      "id": "sample-project",
+      "definitionFilePath": "/workspace/package.json",
+      "packages": ["pkg:npm/example-a@1.0.0", "pkg:npm/example-b@2.0.0"]
+    }
+  ]
+}

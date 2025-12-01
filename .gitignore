@@ -1,0 +1,20 @@
+# Node/TypeScript
+node_modules/
+dist/
+build/
+coverage/
+out/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Env/config
+.env
+
+# Editor/OS
+.DS_Store
+.idea/
+.vscode/

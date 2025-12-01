@@ -5,6 +5,8 @@
 **Status**: Draft  
 **Input**: User description: "$ARGUMENTS"
 
+**Cross-Cutting Obligations**: Define how the feature keeps CLI/API UX stable, meets runtime budgets (target <15m p95 for standard scans), enforces strict TypeScript quality, and provides deterministic tests/fixtures.
+
 ## User Scenarios & Testing *(mandatory)*
 
 <!--

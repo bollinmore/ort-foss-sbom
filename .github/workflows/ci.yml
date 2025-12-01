@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+      - name: Install dependencies
+        run: npm install
+      - name: Lint
+        run: npm run lint
+      - name: Test
+        run: npm test
+
+  scan-timing:
+    runs-on: ubuntu-latest
+    needs: lint-test
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+      - name: Install dependencies
+        run: npm install
+      - name: Measure scan runtime (fixture)
+        env:
+          FOSSOLOGY_API_URL: http://fossology:8081
+          FOSSOLOGY_TOKEN: ${{ secrets.FOSSOLOGY_TOKEN }}
+          SCAN_FIXTURE_PATH: tests/fixtures
+        run: |
+          start_ts=$(date +%s)
+          npm run scan --if-present -- "${SCAN_FIXTURE_PATH}" || true
+          end_ts=$(date +%s)
+          duration=$((end_ts - start_ts))
+          echo "scan_duration_seconds=$duration" >> $GITHUB_STEP_SUMMARY
+          if [ "$duration" -gt 900 ]; then
+            echo "Runtime exceeded 15m target" && exit 1
+          fi
