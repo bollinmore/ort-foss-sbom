@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { buildFileId, computeSha256, normalizeInstallPath } from '@lib/sbom/file-utils';
-import { ExtractedFile, FileType } from '@models/inno/types';
+import { buildFileId, computeSha256, normalizeInstallPath } from '../../lib/sbom/file-utils';
+import { ExtractedFile, FileType } from '../../models/inno/types';
 
 function classifyFileType(filePath: string): FileType {
   const ext = path.extname(filePath).toLowerCase();

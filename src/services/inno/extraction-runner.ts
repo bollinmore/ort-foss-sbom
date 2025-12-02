@@ -1,10 +1,10 @@
 import fs from 'fs';
 import path from 'path';
-import { createStageLogger } from '@lib/logger';
+import { createStageLogger } from '../../lib/logger';
 import { ExtractResult, ExtractorOptions } from './extractor';
 import { InnounpExtractor } from './extractor-innounp';
 import { InnoextractExtractor } from './extractor-innoextract';
-import { ExtractionError, ExtractionWorkspace } from '@models/inno/types';
+import { ExtractionError, ExtractionWorkspace } from '../../models/inno/types';
 
 const logger = createStageLogger('extracting');
 

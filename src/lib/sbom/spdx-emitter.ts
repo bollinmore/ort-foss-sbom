@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { SBOMEntry, LicenseEvidence } from '@models/inno/types';
+import { SBOMEntry, LicenseEvidence } from '../../models/inno/types';
 import { validateSpdx } from './validators';
 
 export interface SpdxEmitOptions {

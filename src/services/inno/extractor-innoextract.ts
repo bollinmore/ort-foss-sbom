@@ -4,10 +4,32 @@ import path from 'path';
 import { ExtractResult, Extractor, ExtractorOptions } from './extractor';
 import { ExtractionError } from '@models/inno/types';
 
-function isToolAvailable(): boolean {
+function findBinary(): string | null {
+  const candidates = [
+    path.resolve(process.cwd(), 'bin', 'innoextract.exe'),
+    path.resolve(process.cwd(), 'innoextract.exe'),
+    path.resolve(__dirname, '../../../bin/innoextract.exe'),
+    path.resolve(__dirname, '../../../../bin/innoextract.exe'),
+    'innoextract'
+  ];
   const command = process.platform === 'win32' ? 'where' : 'which';
-  const probe = spawnSync(command, ['innoextract'], { stdio: 'ignore' });
-  return probe.status === 0;
+  for (const candidate of candidates) {
+    if (candidate.includes(path.sep) && fs.existsSync(candidate)) {
+      return candidate;
+    }
+    const probe = spawnSync(command, [candidate], { stdio: 'pipe', encoding: 'utf-8' });
+    if (probe.status === 0) {
+      const found = probe.stdout.split(/\r?\n/).find(Boolean);
+      if (found && fs.existsSync(found.trim())) {
+        return found.trim();
+      }
+    }
+  }
+  return null;
+}
+
+function isToolAvailable(): boolean {
+  return Boolean(findBinary());
 }
 
 function collectFiles(root: string): string[] {
@@ -29,9 +51,25 @@ function collectFiles(root: string): string[] {
 
 export class InnoextractExtractor implements Extractor {
   tool = 'innoextract' as const;
+  private toolPath: string | null = null;
+
+  private resolveToolPath(): string {
+    if (this.toolPath) return this.toolPath;
+    const found = findBinary();
+    if (!found) {
+      throw new Error('innoextract not found on PATH or in ./bin');
+    }
+    this.toolPath = found;
+    return found;
+  }
 
   async isAvailable(): Promise<boolean> {
-    return isToolAvailable();
+    try {
+      this.resolveToolPath();
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async extract(options: ExtractorOptions): Promise<ExtractResult> {
@@ -43,7 +81,7 @@ export class InnoextractExtractor implements Extractor {
     const stderr: string[] = [];
 
     await new Promise<void>((resolve, reject) => {
-      const child = spawn('innoextract', args, { env: process.env });
+      const child = spawn(this.resolveToolPath(), args, { env: process.env });
       const timer = setTimeout(() => {
         child.kill('SIGKILL');
         const timeoutErr = new Error('Extraction timed out');

@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { SBOMEntry } from '@models/inno/types';
+import { SBOMEntry } from '../../models/inno/types';
 import { validateCycloneDx } from './validators';
 
 export interface CycloneDxEmitOptions {

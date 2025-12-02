@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 import fs from 'fs';
 import path from 'path';
-import { createStageLogger } from '@lib/logger';
-import { runExtraction } from '@services/inno/extraction-runner';
-import { classifyExtractedFiles } from '@services/inno/classifier';
-import { collectLicenseEvidence } from '@services/inno/license-evidence';
-import { emitSpdx } from '@lib/sbom/spdx-emitter';
-import { emitCycloneDx } from '@lib/sbom/cyclonedx-emitter';
-import { SBOMEntry, ScanReport } from '@models/inno/types';
+import { createStageLogger } from '../lib/logger';
+import { runExtraction } from '../services/inno/extraction-runner';
+import { classifyExtractedFiles } from '../services/inno/classifier';
+import { collectLicenseEvidence } from '../services/inno/license-evidence';
+import { emitSpdx } from '../lib/sbom/spdx-emitter';
+import { emitCycloneDx } from '../lib/sbom/cyclonedx-emitter';
+import { SBOMEntry, ScanReport } from '../models/inno/types';
 
 const EXIT_CODES = {
   success: 0,
@@ -27,6 +27,7 @@ interface CliOptions {
   timeoutSeconds: number;
   failOnUnsupported: boolean;
   retainWorkspace: boolean;
+  help?: boolean;
 }
 
 function parseArgs(argv: string[]): CliOptions {
@@ -46,11 +47,13 @@ function parseArgs(argv: string[]): CliOptions {
     }
   }
 
+  const help = Boolean(args.help || args.h);
   const installer = (args.installer as string) ?? '';
   const outputDir = (args['output-dir'] as string) ?? '';
   const formats = ((args.formats as string) ?? 'spdx,cyclonedx').split(',').map((f) => f.trim());
 
   return {
+    help,
     installer,
     outputDir,
     formats,
@@ -80,6 +83,12 @@ function toSbomEntries(files: Awaited<ReturnType<typeof classifyExtractedFiles>>
 async function main() {
   const opts = parseArgs(process.argv);
   const logger = createStageLogger('initializing', { jobId: path.basename(opts.installer) });
+
+  if (opts.help) {
+    // eslint-disable-next-line no-console
+    console.log(`Usage: inno-sbom --installer <path> --output-dir <dir> [--formats spdx,cyclonedx] [--log-level info|debug] [--offline] [--timeout-seconds 900] [--fail-on-unsupported] [--retain-workspace]`);
+    process.exit(EXIT_CODES.success);
+  }
 
   if (!opts.installer || !opts.outputDir) {
     // eslint-disable-next-line no-console

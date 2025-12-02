@@ -1,6 +1,6 @@
 import path from 'path';
-import { LicenseEvidence } from '@models/inno/types';
-import { normalizeInstallPath } from '@lib/sbom/file-utils';
+import { LicenseEvidence } from '../../models/inno/types';
+import { normalizeInstallPath } from '../../lib/sbom/file-utils';
 
 let evidenceCounter = 0;
 
