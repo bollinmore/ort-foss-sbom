@@ -1,5 +1,5 @@
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
-type Stage = 'extracting' | 'classifying' | 'sbom_emitting' | 'initializing';
+type Stage = string;
 
 export interface LogContext {
   jobId?: string;

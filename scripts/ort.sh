@@ -64,10 +64,16 @@ if [[ ! -d "${TARGET_PATH}" ]]; then
   exit 1
 fi
 
-OUTPUT_BASE="${OUTPUT_DIR:-${REPO_ROOT}/out}"
-JOB_ID="$(generate_job_id)"
-JOB_DIR="${OUTPUT_BASE}/${JOB_ID}"
-OUTPUT_DIR="${JOB_DIR}/ort"
+if [[ -n "${OUTPUT_DIR:-}" ]]; then
+  JOB_ID="${JOB_ID:-job-$(date +%s)}"
+  JOB_DIR="${OUTPUT_DIR}"
+  OUTPUT_DIR="${JOB_DIR}"
+else
+  OUTPUT_BASE="${REPO_ROOT}/out"
+  JOB_ID="$(generate_job_id)"
+  JOB_DIR="${OUTPUT_BASE}/${JOB_ID}"
+  OUTPUT_DIR="${JOB_DIR}/ort"
+fi
 ORT_CLI="${ORT_CLI_PATH:-${REPO_ROOT}/bin/ort-docker.sh}"
 
 mkdir -p "${OUTPUT_DIR}"
