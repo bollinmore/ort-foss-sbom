@@ -54,6 +54,26 @@ node scripts/run-inno-sbom-upload.js --upload-mode=archive --archive-format=tar.
 - ORT CLI path: `ORT_CLI_PATH=/path/to/ort` (defaults to Docker wrapper)
 - Output base dir: `OUTPUT_DIR=/custom/out` (jobs still use `job-<id>/ort` inside)
 
+## Inno Setup installer → SBOM (inno-sbom CLI)
+- Purpose: generate SPDX/CycloneDX SBOMs directly from a single Inno Setup installer (`setup.exe`) without source.
+- Prereqs: Node.js 18+, build artifacts (`npm run build`), Inno extractors available (place `innounp.exe` and `innoextract.exe` in `./bin` or on PATH). Test fixture lives at `tests/fixtures/inno/iq2-setup.exe` and is git-ignored.
+- Run:
+  ```bash
+  node dist/cli/inno-sbom.js --installer ./tests/fixtures/inno/iq2-setup.exe --output-dir ./out/inno-iq2 --formats spdx,cyclonedx --timeout-seconds 900 --retain-workspace
+  ```
+  Flags of interest:
+  - `--installer <path>`: Inno Setup executable.
+  - `--output-dir <dir>`: where SBOM + `scan-status.json` + workspace go.
+  - `--formats spdx,cyclonedx`: comma list; defaults to both.
+  - `--timeout-seconds <n>`: extraction timeout (default 900).
+  - `--retain-workspace`: keep extracted files under `<output-dir>/workspace` for re-use/debugging.
+- Outputs:
+  - `<output-dir>/sbom.spdx.json` (and CycloneDX if requested)
+  - `<output-dir>/scan-status.json` (coverage, exit codes, errors)
+  - `<output-dir>/workspace/` extracted payload (kept if `--retain-workspace`)
+- Exit codes: 0 success, 2 invalid input, 3 extraction failure, 4 classification gap, 5 emit failure, 6 timeout.
+- License inference: looks for license/readme files, simple SPDX text regexes, and hints from filenames; falls back to `LicenseRef-...` or `NOASSERTION` when evidence is missing.
+
 ## Live mode (+ .env)
 1) Copy `.env.sample` → `.env` and set:
    - `INTEGRATION_MODE=live`
