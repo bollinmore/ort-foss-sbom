@@ -32,6 +32,20 @@ npm run scan /absolute/path/to/project
 
 `SIMULATE_RISK=1` forces a risk exit for CI gating tests.
 
+### Inno SBOM upload to Fossology (fixture installer)
+- Required env: `FOSSOLOGY_API_URL`, `FOSSOLOGY_TOKEN`; optional `FOSSOLOGY_PARENT_FOLDER_ID`, `FOSSOLOGY_FOLDER_NAME`, `FOSSOLOGY_ACCESS_LEVEL`.
+- Run from repo root after build:
+```bash
+# Default: upload a zip archive of the workspace
+node scripts/run-inno-sbom-upload.js
+
+# Upload all workspace files individually (preserve hierarchy)
+node scripts/run-inno-sbom-upload.js --upload-mode=files
+
+# Choose archive format explicitly
+node scripts/run-inno-sbom-upload.js --upload-mode=archive --archive-format=tar.gz
+```
+
 ## CLI flags & env
 - CLI (via `npm run scan`): `scan --path <abs> --config <file?> --downloader-enabled=false (default) --output <dir> (default ./out)`
 - Verbose ORT streaming: `npm run scan -- -v /abs/path`
@@ -74,4 +88,3 @@ node scripts/test-fossology-upload.js /abs/path/to/ort/scan-result.spdx.json
 - Missing `.env` in live mode → copy `.env.sample` and fill required variables.
 - Downloader must stay disabled; CI should block if `downloaderEnabled=true`.
 - Large artifacts (>500MB) are rejected with `ARTIFACT_TOO_LARGE`.
-
