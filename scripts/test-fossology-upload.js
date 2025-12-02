@@ -47,9 +47,24 @@ try {
   }
 }
 
+function isTruthy(val) {
+  return ['1', 'true', 'yes', 'on'].includes(String(val || '').toLowerCase());
+}
+
 async function main() {
   const [argPath] = process.argv.slice(2);
   const filePath = argPath || process.env.FOSSOLOGY_SMOKE_FILE || path.resolve('tests/fixtures/scanner.spdx.json');
+
+  const mode = (process.env.FOSSOLOGY_MODE || 'stub').toLowerCase();
+  const smokeEnabled = isTruthy(process.env.FOSSOLOGY_SMOKE_TEST || process.env.FOSSOLOGY_SMOKE);
+  if (!smokeEnabled) {
+    console.log('SKIP fossology upload smoke test: set FOSSOLOGY_SMOKE_TEST=1 to enable');
+    return;
+  }
+  if (mode !== 'live') {
+    console.log(`SKIP fossology upload smoke test: FOSSOLOGY_MODE=${mode || 'stub'} (expected live)`);
+    return;
+  }
 
   const apiUrl = (process.env.FOSSOLOGY_API_URL || '').trim();
   const token = (process.env.FOSSOLOGY_TOKEN || '').trim();

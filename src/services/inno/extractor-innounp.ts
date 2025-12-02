@@ -5,13 +5,17 @@ import { ExtractResult, Extractor, ExtractorOptions } from './extractor';
 import { ExtractionError } from '@models/inno/types';
 
 function findBinary(): string | null {
+  const isWin = process.platform === 'win32';
   const candidates = [
-    path.resolve(process.cwd(), 'bin', 'innounp.exe'),
-    path.resolve(process.cwd(), 'innounp.exe'),
-    path.resolve(__dirname, '../../../bin/innounp.exe'),
-    path.resolve(__dirname, '../../../../bin/innounp.exe'),
+    process.env.INNOUNP_PATH,
+    process.env.INNOUNP_BIN,
+    // Only prefer bundled .exe on Windows; on *nix require a native binary on PATH.
+    isWin ? path.resolve(process.cwd(), 'bin', 'innounp.exe') : null,
+    isWin ? path.resolve(process.cwd(), 'innounp.exe') : null,
+    isWin ? path.resolve(__dirname, '../../../bin/innounp.exe') : null,
+    isWin ? path.resolve(__dirname, '../../../../bin/innounp.exe') : null,
     'innounp'
-  ];
+  ].filter(Boolean) as string[];
   const command = process.platform === 'win32' ? 'where' : 'which';
   for (const candidate of candidates) {
     if (candidate.includes(path.sep) && fs.existsSync(candidate)) {

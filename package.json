@@ -8,6 +8,8 @@
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "format": "prettier --write \"{src,tests}/**/*.{ts,tsx,js,json,md}\"",
     "test": "jest --coverage && npm run test:fossology",
+    "prepare": "npm run build",
+    "postinstall": "node scripts/fix-perms.js",
     "test:fossology": "node scripts/test-fossology-upload.js",
     "prescan": "npm run build",
     "scan": "node dist/cli/scan.js",

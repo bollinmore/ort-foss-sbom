@@ -5,13 +5,17 @@ import { ExtractResult, Extractor, ExtractorOptions } from './extractor';
 import { ExtractionError } from '@models/inno/types';
 
 function findBinary(): string | null {
+  const isWin = process.platform === 'win32';
   const candidates = [
-    path.resolve(process.cwd(), 'bin', 'innoextract.exe'),
-    path.resolve(process.cwd(), 'innoextract.exe'),
-    path.resolve(__dirname, '../../../bin/innoextract.exe'),
-    path.resolve(__dirname, '../../../../bin/innoextract.exe'),
+    process.env.INNOEXTRACT_PATH,
+    process.env.INNOEXTRACT_BIN,
+    // Ship .exe for Windows; on *nix require a native binary (e.g., apt/brew installed).
+    isWin ? path.resolve(process.cwd(), 'bin', 'innoextract.exe') : null,
+    isWin ? path.resolve(process.cwd(), 'innoextract.exe') : null,
+    isWin ? path.resolve(__dirname, '../../../bin/innoextract.exe') : null,
+    isWin ? path.resolve(__dirname, '../../../../bin/innoextract.exe') : null,
     'innoextract'
-  ];
+  ].filter(Boolean) as string[];
   const command = process.platform === 'win32' ? 'where' : 'which';
   for (const candidate of candidates) {
     if (candidate.includes(path.sep) && fs.existsSync(candidate)) {
