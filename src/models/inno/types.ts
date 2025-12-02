@@ -10,7 +10,7 @@ export interface InstallerPackage {
 }
 
 export interface ExtractionError {
-  code: 'UNSUPPORTED_COMPRESSION' | 'MISSING_SEGMENT' | 'PASSWORD_PROTECTED' | 'CORRUPTED' | 'UNKNOWN';
+  code: 'UNSUPPORTED_COMPRESSION' | 'MISSING_SEGMENT' | 'PASSWORD_PROTECTED' | 'CORRUPTED' | 'TIMEOUT' | 'UNKNOWN';
   message: string;
   segment?: string;
 }
