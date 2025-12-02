@@ -24,7 +24,7 @@ export function collectLicenseEvidence(fileIdsByPath: Map<string, string>): Lice
         confidence: 0.9,
         summary: 'README file detected as license evidence'
       });
-    } else if (base.startsWith('license') || base === 'copying' || base === 'licence') {
+    } else if (base.includes('license') || base === 'copying' || base === 'licence') {
       evidences.push({
         id: nextId(),
         sourceFileId: fileId,

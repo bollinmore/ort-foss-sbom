@@ -7,7 +7,7 @@ import { classifyExtractedFiles } from '../services/inno/classifier';
 import { collectLicenseEvidence } from '../services/inno/license-evidence';
 import { emitSpdx } from '../lib/sbom/spdx-emitter';
 import { emitCycloneDx } from '../lib/sbom/cyclonedx-emitter';
-import { SBOMEntry, ScanReport } from '../models/inno/types';
+import { SBOMEntry, ScanReport, LicenseEvidence } from '../models/inno/types';
 
 const EXIT_CODES = {
   success: 0,
@@ -80,6 +80,54 @@ function toSbomEntries(files: Awaited<ReturnType<typeof classifyExtractedFiles>>
   }));
 }
 
+function inferLicense(
+  entry: SBOMEntry,
+  evidences: LicenseEvidence[],
+  evidencePaths: string[]
+): { license: string; classificationStatus: SBOMEntry['classificationStatus'] } {
+  if (evidences.length === 0) {
+    return { license: 'NOASSERTION', classificationStatus: 'manual_review_required' };
+  }
+
+  const evidenceSummary = evidences.map((e) => `${e.evidenceType}:${e.summary}`.toLowerCase());
+  const nameHints = [entry.path.toLowerCase(), ...evidenceSummary, ...evidencePaths.map((p) => p.toLowerCase())];
+
+  const licensePatterns: Array<{ pattern: RegExp; license: string }> = [
+    { pattern: /mit/, license: 'MIT' },
+    { pattern: /apache[- ]?2(\.0)?/, license: 'Apache-2.0' },
+    { pattern: /gpl[- ]?v?3/, license: 'GPL-3.0-only' },
+    { pattern: /gpl[- ]?v?2/, license: 'GPL-2.0-only' },
+    { pattern: /lgpl[- ]?v?3/, license: 'LGPL-3.0-only' },
+    { pattern: /lgpl[- ]?v?2\.1/, license: 'LGPL-2.1-only' },
+    { pattern: /bsd[- ]?2/, license: 'BSD-2-Clause' },
+    { pattern: /bsd[- ]?3/, license: 'BSD-3-Clause' },
+    { pattern: /mpl[- ]?2/, license: 'MPL-2.0' },
+    { pattern: /unlicense/, license: 'Unlicense' },
+    { pattern: /isc/, license: 'ISC' }
+  ];
+
+  for (const hint of nameHints) {
+    for (const { pattern, license } of licensePatterns) {
+      if (pattern.test(hint)) {
+        return { license, classificationStatus: 'classified' };
+      }
+    }
+  }
+
+  const licenseFileEvidence = evidences.find((e) => e.evidenceType === 'license_file');
+  if (licenseFileEvidence) {
+    const licenseFilePath = evidencePaths.find((p) => p.toLowerCase().includes('license')) ?? evidencePaths[0] ?? '';
+    const base = path.basename(licenseFilePath || 'license').replace(/\.[^/.]+$/, '');
+    const safeRef = base.replace(/[^A-Za-z0-9.+-]/g, '-');
+    return { license: `LicenseRef-${safeRef || 'LicenseFile'}`, classificationStatus: 'classified' };
+  }
+  if (evidences.some((e) => e.evidenceType === 'readme')) {
+    return { license: 'LicenseRef-Readme', classificationStatus: 'manual_review_required' };
+  }
+
+  return { license: 'NOASSERTION', classificationStatus: 'manual_review_required' };
+}
+
 async function main() {
   const opts = parseArgs(process.argv);
   const logger = createStageLogger('initializing', { jobId: path.basename(opts.installer) });
@@ -129,9 +177,16 @@ async function main() {
     const fileIdByPath = new Map(classified.map((f) => [f.installPath, f.id]));
     const evidences = collectLicenseEvidence(fileIdByPath);
 
+    const filePathById = new Map(classified.map((f) => [f.id, f.installPath]));
+
     const entries = toSbomEntries(classified).map((entry) => {
-      const matchingEvidence = evidences.filter((ev) => ev.sourceFileId === entry.fileId).map((ev) => ev.id);
-      return { ...entry, evidenceIds: matchingEvidence };
+      const matchingEvidence = evidences.filter((ev) => ev.sourceFileId === entry.fileId);
+      const matchingIds = matchingEvidence.map((ev) => ev.id);
+      const evidencePaths = matchingEvidence
+        .map((ev) => filePathById.get(ev.sourceFileId))
+        .filter((p): p is string => Boolean(p));
+      const inferred = inferLicense(entry, matchingEvidence, evidencePaths);
+      return { ...entry, evidenceIds: matchingIds, license: inferred.license, classificationStatus: inferred.classificationStatus };
     });
 
     report.status = 'sbom_emitting';
