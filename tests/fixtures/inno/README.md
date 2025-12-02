@@ -10,4 +10,4 @@ Placeholder fixture layout for Inno Setup SBOM tests. Replace `placeholder.txt` 
 - `unsupported/` – installer using unsupported compression or missing volumes to validate clear error reporting.
 - `unexpected/` – installer containing extra/unexpected files to ensure SBOM includes them for allowlist comparison.
 
-Add accompanying golden SBOMs and fixtures when implementation is ready.
+Add accompanying golden SBOMs and fixtures when implementation is ready. A real installer (`iq2-setup.exe`, ~411 MB) now lives under `tests/fixtures/inno/iq2-setup.exe` for integration tests; it is ignored by git to avoid bloating the repo.
