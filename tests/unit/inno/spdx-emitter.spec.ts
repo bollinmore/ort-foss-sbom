@@ -48,6 +48,7 @@ describe('SPDX emitter', () => {
     expect(valid).toBe(true);
     const json = JSON.parse(fs.readFileSync(outputPath, 'utf-8'));
     expect(json.files[0].fileName).toBe('bin/app.exe');
-    expect(json.hasExtractedLicensingInfos[0].name).toBe('e1');
+    expect(json.hasExtractedLicensingInfos[0].licenseId).toBe('e1');
+    expect(json.hasExtractedLicensingInfos[0].name).toBe('License file detected');
   });
 });

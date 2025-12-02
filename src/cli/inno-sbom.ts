@@ -116,6 +116,9 @@ function inferLicense(
 
   const licenseFileEvidence = evidences.find((e) => e.evidenceType === 'license_file');
   if (licenseFileEvidence) {
+    if (licenseFileEvidence.licenseSpdxId) {
+      return { license: licenseFileEvidence.licenseSpdxId, classificationStatus: 'classified' };
+    }
     const licenseFilePath = evidencePaths.find((p) => p.toLowerCase().includes('license')) ?? evidencePaths[0] ?? '';
     const base = path.basename(licenseFilePath || 'license').replace(/\.[^/.]+$/, '');
     const safeRef = base.replace(/[^A-Za-z0-9.+-]/g, '-');
@@ -174,17 +177,42 @@ async function main() {
     report.coverage.metadataComplete = totalFiles === 0 ? 0 : 100;
     logger.info('Classification complete', { stage: 'classifying', event: 'complete', data: { files: classified.length } });
 
-    const fileIdByPath = new Map(classified.map((f) => [f.installPath, f.id]));
-    const evidences = collectLicenseEvidence(fileIdByPath);
+    const evidences = collectLicenseEvidence(
+      classified.map((f) => ({
+        installPath: f.installPath,
+        fileId: f.id,
+        extractedPath: f.extractedPath
+      }))
+    );
 
     const filePathById = new Map(classified.map((f) => [f.id, f.installPath]));
+    const licenseEvidenceWithPath = evidences
+      .filter((e) => e.evidenceType === 'license_file')
+      .map((e) => {
+        const evPath = filePathById.get(e.sourceFileId);
+        if (!evPath) return null;
+        const dir = evPath.includes('/') ? evPath.slice(0, evPath.lastIndexOf('/')) : '';
+        return { evidence: e, path: evPath, dir };
+      })
+      .filter((p): p is { evidence: LicenseEvidence; path: string; dir: string } => Boolean(p));
 
     const entries = toSbomEntries(classified).map((entry) => {
-      const matchingEvidence = evidences.filter((ev) => ev.sourceFileId === entry.fileId);
-      const matchingIds = matchingEvidence.map((ev) => ev.id);
-      const evidencePaths = matchingEvidence
+      let matchingEvidence = evidences.filter((ev) => ev.sourceFileId === entry.fileId);
+      let evidencePaths = matchingEvidence
         .map((ev) => filePathById.get(ev.sourceFileId))
         .filter((p): p is string => Boolean(p));
+
+      if (matchingEvidence.length === 0 && licenseEvidenceWithPath.length > 0) {
+        const entryPath = entry.path;
+        const candidates = licenseEvidenceWithPath
+          .filter((c) => c.dir && entryPath.startsWith(c.dir))
+          .sort((a, b) => b.dir.length - a.dir.length);
+        const selected = candidates[0] ?? licenseEvidenceWithPath[0];
+        matchingEvidence = [selected.evidence];
+        evidencePaths = [selected.path];
+      }
+
+      const matchingIds = matchingEvidence.map((ev) => ev.id);
       const inferred = inferLicense(entry, matchingEvidence, evidencePaths);
       return { ...entry, evidenceIds: matchingIds, license: inferred.license, classificationStatus: inferred.classificationStatus };
     });

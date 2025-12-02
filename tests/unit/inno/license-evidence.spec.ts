@@ -1,14 +1,24 @@
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 import { collectLicenseEvidence } from '@services/inno/license-evidence';
 
 describe('license evidence heuristics', () => {
-  it('detects README and LICENSE files with confidence levels', () => {
-    const map = new Map<string, string>([
-      ['docs/README.txt', 'file-1'],
-      ['LICENSE', 'file-2'],
-      ['bin/app.exe', 'file-3']
-    ]);
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'license-evidence-'));
 
-    const evidences = collectLicenseEvidence(map);
+  it('detects README and LICENSE files with confidence levels', () => {
+    const readmePath = path.join(tmpDir, 'README.txt');
+    const licensePath = path.join(tmpDir, 'LICENSE');
+    fs.writeFileSync(readmePath, 'Readme contents');
+    fs.writeFileSync(licensePath, 'Apache License, Version 2.0');
+
+    const files = [
+      { installPath: 'docs/README.txt', fileId: 'file-1', extractedPath: readmePath },
+      { installPath: 'LICENSE', fileId: 'file-2', extractedPath: licensePath },
+      { installPath: 'bin/app.exe', fileId: 'file-3', extractedPath: path.join(tmpDir, 'app.exe') }
+    ];
+
+    const evidences = collectLicenseEvidence(files);
     const byId = Object.fromEntries(evidences.map((e) => [e.sourceFileId, e]));
 
     expect(byId['file-1']).toMatchObject({
@@ -17,8 +27,13 @@ describe('license evidence heuristics', () => {
     });
     expect(byId['file-2']).toMatchObject({
       evidenceType: 'license_file',
-      confidence: expect.any(Number)
+      confidence: expect.any(Number),
+      licenseSpdxId: 'Apache-2.0'
     });
     expect(byId['file-3']).toBeUndefined();
+  });
+
+  afterAll(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 });

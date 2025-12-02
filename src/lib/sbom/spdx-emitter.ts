@@ -31,10 +31,15 @@ export function emitSpdx(options: SpdxEmitOptions): { outputPath: string; valid:
     documentName,
     documentNamespace: namespace,
     files,
-    hasExtractedLicensingInfos: evidences.map((e) => ({
-      name: e.id,
-      extractedText: e.summary
-    }))
+    hasExtractedLicensingInfos: evidences.map((e) => {
+      const licenseId = e.licenseSpdxId ?? e.id;
+      return {
+        licenseId,
+        name: e.summary,
+        extractedText: e.extractedText ?? e.summary,
+        comment: e.summary
+      };
+    })
   };
 
   const outputPath = path.join(outputDir, 'sbom.spdx.json');

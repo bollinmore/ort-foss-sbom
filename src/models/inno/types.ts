@@ -58,6 +58,8 @@ export interface LicenseEvidence {
   id: string;
   sourceFileId: string;
   evidenceType: EvidenceType;
+  licenseSpdxId?: string;
+  extractedText?: string;
   snippetHash?: string;
   confidence: number;
   summary: string;
