@@ -103,6 +103,24 @@ Release engineer adds automated scanning of Inno Setup installers in CI to block
 - **SC-004**: CI runs fail fast with actionable errors when extraction or classification gaps exist, enabling remediation without rerunning full pipelines.
 - **SC-005**: Auditors can trace each SBOM entry to source evidence (metadata or files) sufficient to sign off release compliance.
 
+## SBOM Coverage, Traceability, and Determinism (Clarifications)
+
+- **Coverage requirements**: 100% of extracted files MUST appear in both SPDX and CycloneDX outputs with unique install paths and checksums; no file can be dropped or merged. Unexpected/extra files are included with a `classificationStatus` that allows allowlist comparison.
+- **Identical coverage definition**: SPDX 2.3 and CycloneDX 1.6 MUST enumerate the same file set and per-file metadata (path, checksum, type, license, arch/lang hints, evidence references) so auditors can diff formats without losing information.
+- **Architecture and language annotations**: Each SBOM entry carries `architecture` and `language` hints when present; multi-arch/multi-language installers preserve per-file distinctions rather than collapsing to a single value.
+- **License classification and evidence**: License outputs use SPDX expressions; evidence sources include README files, License files, resource strings, and binary metadata fields. `evidenceIds` reference those sources, and entries without confident evidence (confidence <0.95 or missing signals) are marked `manual_review_required`.
+- **Deterministic workspace**: Extraction writes to a stable workspace layout (predictable directory name, no in-place mutations) and preserves original install paths. Re-running on the same input produces identical checksums, evidence references, and SBOM ordering.
+- **Error reporting**: Failures emit actionable JSON describing error code, message, and affected file/segment. Unsupported compression, missing volumes, password protection, or truncated archives identify the impacted segments and return exit code 3.
+- **Logging and auditability**: Structured logs record extractor selection, file classifications, evidence matches, confidence scores, and gaps. Logs persist even on fail-fast exits to maintain traceability.
+- **SBOM content alignment**: Per FR-002 through FR-005, each SBOM record MUST include path, checksum, type, architecture/language hints, license determination, classification status, evidence references, and metadata linkages; this aligns with SC-001 and SC-002 coverage targets.
+- **Performance and resource bounds**: Runtime target remains <15 minutes p95 for installers up to 1 GB with bounded memory suitable for CI runners; emit timings in `scan-status.json` for transparency.
+- **Traceability acceptance**: Every SBOM entry MUST reference evidence/log context (SC-005), enabling auditors to follow links from SBOM -> evidence -> log decisions.
+- **Edge and failure scenarios**: Corrupted/truncated/password-protected installers fail with explicit status and no partial SBOM. Unsupported compression preserves the list of affected files/segments in the error payload. Duplicate filenames across different install paths remain distinct SBOM entries.
+- **Evidence gaps**: When license evidence is non-text or absent, fallback heuristics (metadata, resource strings) run; remaining uncertainty sets `manual_review_required` to avoid silent acceptance.
+- **Offline and assumptions**: Offline mode is default; no network calls are required. Inno Setup assumptions (not obfuscated or password-protected) are captured; violating them yields a failure with guidance to provide supported artifacts.
+- **Dependencies**: External unpackers `innounp` (>=0.50 primary) and `innoextract` (>=1.9 fallback) are required and version-pinned for compatibility; absence or mismatch is surfaced as an actionable error.
+- **Fail-fast with retention**: Fail-fast behavior retains `scan.log` and `scan-status.json` so CI users can diagnose without rerunning extraction.
+
 ## Assumptions
 
 - Inno Setup installers are not password-protected or intentionally obfuscated; unsupported cases are reported as failures.

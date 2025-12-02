@@ -17,11 +17,11 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Update `package.json` to add `@cyclonedx/cyclonedx-library`, `ajv`, and `ajv-formats` dependencies for SBOM emission/validation.  
-- [ ] T002 Add npm scripts to build/emit SPDX/CycloneDX for Inno Setup CLI in `package.json` (e.g., `inno-sbom`, `validate:sbom`).  
-- [ ] T003 [P] Ensure TypeScript strict config supports new modules; adjust `tsconfig.json` paths/includes for new CLI and services.  
-- [ ] T004 [P] Create directories for extractor/classifier/emitters: `src/services/inno/`, `src/lib/sbom/`, `src/models/inno/`.  
-- [ ] T005 Configure Jest to include new fixtures and increase timeout for installer extraction tests in `jest.config.cjs`.
+ - [X] T001 Update `package.json` to add `@cyclonedx/cyclonedx-library`, `ajv`, and `ajv-formats` dependencies for SBOM emission/validation.  
+ - [X] T002 Add npm scripts to build/emit SPDX/CycloneDX for Inno Setup CLI in `package.json` (e.g., `inno-sbom`, `validate:sbom`).  
+ - [X] T003 [P] Ensure TypeScript strict config supports new modules; adjust `tsconfig.json` paths/includes for new CLI and services.  
+ - [X] T004 [P] Create directories for extractor/classifier/emitters: `src/services/inno/`, `src/lib/sbom/`, `src/models/inno/`.  
+ - [X] T005 Configure Jest to include new fixtures and increase timeout for installer extraction tests in `jest.config.cjs`.
 
 ---
 
@@ -29,13 +29,13 @@
 
 **Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
 
-- [ ] T006 Implement shared Inno Setup domain types (InstallerPackage, ExtractionWorkspace, ExtractedFile, LicenseEvidence, SBOMEntry, ScanReport) in `src/models/inno/types.ts`.  
-- [ ] T007 [P] Add deterministic checksum and path utilities for extracted files in `src/lib/sbom/file-utils.ts`.  
-- [ ] T008 [P] Implement structured logging helper with stages (extracting, classifying, sbom_emitting) in `src/lib/logger.ts`.  
-- [ ] T009 Define extractor interface (supports innounp/innoextract, streaming outputs, error mapping) in `src/services/inno/extractor.ts`.  
-- [ ] T010 Establish fixtures layout with placeholder installers (simple, multi-arch/lang, metadata-rich, corrupted, unsupported) in `tests/fixtures/inno/README.md` and placeholder files.  
-- [ ] T011 Configure AJV schema validators for SPDX 2.3 and CycloneDX 1.6 in `src/lib/sbom/validators.ts`.  
-- [ ] T012 Wire CLI entrypoint scaffold `src/cli/inno-sbom.ts` with argument parsing stubs and offline/default flags.
+- [X] T006 Implement shared Inno Setup domain types (InstallerPackage, ExtractionWorkspace, ExtractedFile, LicenseEvidence, SBOMEntry, ScanReport) in `src/models/inno/types.ts`.  
+- [X] T007 [P] Add deterministic checksum and path utilities for extracted files in `src/lib/sbom/file-utils.ts`.  
+- [X] T008 [P] Implement structured logging helper with stages (extracting, classifying, sbom_emitting) in `src/lib/logger.ts`.  
+- [X] T009 Define extractor interface (supports innounp/innoextract, streaming outputs, error mapping) in `src/services/inno/extractor.ts`.  
+- [X] T010 Establish fixtures layout with placeholder installers (simple, multi-arch/lang, metadata-rich, corrupted, unsupported) in `tests/fixtures/inno/README.md` and placeholder files.  
+- [X] T011 Configure AJV schema validators for SPDX 2.3 and CycloneDX 1.6 in `src/lib/sbom/validators.ts`.  
+- [X] T012 Wire CLI entrypoint scaffold `src/cli/inno-sbom.ts` with argument parsing stubs and offline/default flags.
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -48,21 +48,21 @@
 
 ### Tests for User Story 1
 
-- [ ] T013 [P] [US1] Add integration test for simple installer fixture verifying 100% file coverage and evidence links in `tests/integration/inno-sbom-compliance.spec.ts`.  
-- [ ] T014 [P] [US1] Add golden SBOM fixtures (SPDX, CycloneDX) for simple installer in `tests/fixtures/inno/simple/sbom.spdx.json` and `sbom.cyclonedx.json`.  
-- [ ] T015 [P] [US1] Add unit test for license evidence extraction heuristics in `tests/unit/inno/license-evidence.spec.ts`.
+ - [X] T013 [P] [US1] Add integration test for simple installer fixture verifying 100% file coverage and evidence links in `tests/integration/inno-sbom-compliance.spec.ts`.  
+ - [X] T014 [P] [US1] Add golden SBOM fixtures (SPDX, CycloneDX) for simple installer in `tests/fixtures/inno/simple/sbom.spdx.json` and `sbom.cyclonedx.json`.  
+ - [X] T015 [P] [US1] Add unit test for license evidence extraction heuristics in `tests/unit/inno/license-evidence.spec.ts`.
 
 ### Implementation for User Story 1
 
-- [ ] T016 [P] [US1] Implement innounp/innoextract command runners with deterministic workspace handling in `src/services/inno/extractor-innounp.ts` and `src/services/inno/extractor-innoextract.ts`.  
-- [ ] T017 [US1] Implement extractor orchestration (select primary/fallback, map errors) in `src/services/inno/extraction-runner.ts`.  
-- [ ] T018 [P] [US1] Implement file enumeration/classification (type, checksum, installPath) in `src/services/inno/classifier.ts`.  
-- [ ] T019 [P] [US1] Implement license evidence collector (README/License/resource metadata hooks) in `src/services/inno/license-evidence.ts`.  
-- [ ] T020 [US1] Implement SPDX 2.3 file-level emitter with AJV validation in `src/lib/sbom/spdx-emitter.ts`.  
-- [ ] T021 [US1] Implement CycloneDX 1.6 emitter using `@cyclonedx/cyclonedx-library` in `src/lib/sbom/cyclonedx-emitter.ts`.  
-- [ ] T022 [US1] Integrate emitters into CLI flow and ensure identical coverage between formats in `src/cli/inno-sbom.ts`.  
-- [ ] T023 [US1] Add structured logging for extraction/classification/evidence in `src/cli/inno-sbom.ts` using `src/lib/logger.ts`.  
-- [ ] T024 [US1] Add scan-status JSON output (status, coverage, sbom paths, errors) in `src/cli/inno-sbom.ts`.
+- [X] T016 [P] [US1] Implement innounp/innoextract command runners with deterministic workspace handling in `src/services/inno/extractor-innounp.ts` and `src/services/inno/extractor-innoextract.ts`.  
+- [X] T017 [US1] Implement extractor orchestration (select primary/fallback, map errors) in `src/services/inno/extraction-runner.ts`.  
+- [X] T018 [P] [US1] Implement file enumeration/classification (type, checksum, installPath) in `src/services/inno/classifier.ts`.  
+- [X] T019 [P] [US1] Implement license evidence collector (README/License/resource metadata hooks) in `src/services/inno/license-evidence.ts`.  
+- [X] T020 [US1] Implement SPDX 2.3 file-level emitter with AJV validation in `src/lib/sbom/spdx-emitter.ts`.  
+- [X] T021 [US1] Implement CycloneDX 1.6 emitter using `@cyclonedx/cyclonedx-library` in `src/lib/sbom/cyclonedx-emitter.ts`.  
+- [X] T022 [US1] Integrate emitters into CLI flow and ensure identical coverage between formats in `src/cli/inno-sbom.ts`.  
+- [X] T023 [US1] Add structured logging for extraction/classification/evidence in `src/cli/inno-sbom.ts` using `src/lib/logger.ts`.  
+- [X] T024 [US1] Add scan-status JSON output (status, coverage, sbom paths, errors) in `src/cli/inno-sbom.ts`.
 
 **Checkpoint**: User Story 1 fully functional and testable independently
 
@@ -75,17 +75,17 @@
 
 ### Tests for User Story 2
 
-- [ ] T025 [P] [US2] Add integration test for metadata-rich installer verifying PE metadata captured per file in `tests/integration/inno-sbom-metadata.spec.ts`.  
-- [ ] T026 [P] [US2] Add integration test for multi-arch/lang installer asserting architecture/language annotations preserved in SBOM in `tests/integration/inno-sbom-arch-lang.spec.ts`.  
-- [ ] T027 [P] [US2] Add unit test for classification of unexpected/extra files to ensure SBOM inclusion in `tests/unit/inno/classifier-extra.spec.ts`.
+- [X] T025 [P] [US2] Add integration test for metadata-rich installer verifying PE metadata captured per file in `tests/integration/inno-sbom-metadata.spec.ts`.  
+- [X] T026 [P] [US2] Add integration test for multi-arch/lang installer asserting architecture/language annotations preserved in SBOM in `tests/integration/inno-sbom-arch-lang.spec.ts`.  
+- [X] T027 [P] [US2] Add unit test for classification of unexpected/extra files to ensure SBOM inclusion in `tests/unit/inno/classifier-extra.spec.ts`.
 
 ### Implementation for User Story 2
 
-- [ ] T028 [P] [US2] Extend classifier to capture PE version/resource metadata and architecture/language hints in `src/services/inno/classifier.ts`.  
-- [ ] T029 [US2] Add metadata fields to SBOM entries and evidence references in `src/lib/sbom/spdx-emitter.ts` and `src/lib/sbom/cyclonedx-emitter.ts`.  
-- [ ] T030 [US2] Implement detection and reporting for unexpected files (no prior manifest) in `src/services/inno/classifier.ts` with logging hooks.  
-- [ ] T031 [US2] Update ScanReport coverage metrics to include metadata completeness in `src/models/inno/types.ts` and `src/cli/inno-sbom.ts`.  
-- [ ] T032 [US2] Add documentation for metadata expectations and allowlist comparison in `specs/002-shortname-inno-setup-sbom/quickstart.md`.
+ - [X] T028 [P] [US2] Extend classifier to capture PE version/resource metadata and architecture/language hints in `src/services/inno/classifier.ts`.  
+ - [X] T029 [US2] Add metadata fields to SBOM entries and evidence references in `src/lib/sbom/spdx-emitter.ts` and `src/lib/sbom/cyclonedx-emitter.ts`.  
+ - [X] T030 [US2] Implement detection and reporting for unexpected files (no prior manifest) in `src/services/inno/classifier.ts` with logging hooks.  
+ - [X] T031 [US2] Update ScanReport coverage metrics to include metadata completeness in `src/models/inno/types.ts` and `src/cli/inno-sbom.ts`.  
+ - [X] T032 [US2] Add documentation for metadata expectations and allowlist comparison in `specs/002-shortname-inno-setup-sbom/quickstart.md`.
 
 **Checkpoint**: User Story 2 functional with independent tests
 
@@ -98,17 +98,17 @@
 
 ### Tests for User Story 3
 
-- [ ] T033 [P] [US3] Add integration test for corrupted installer asserting explicit failure code and error detail in `tests/integration/inno-sbom-corrupted.spec.ts`.  
-- [ ] T034 [P] [US3] Add integration test for unsupported compression/multi-volume missing segment with fail-fast behavior in `tests/integration/inno-sbom-unsupported.spec.ts`.  
-- [ ] T035 [P] [US3] Add contract test for CLI exit codes/status JSON in `tests/contract/inno-sbom-cli.spec.ts`.
+- [X] T033 [P] [US3] Add integration test for corrupted installer asserting explicit failure code and error detail in `tests/integration/inno-sbom-corrupted.spec.ts`.  
+- [X] T034 [P] [US3] Add integration test for unsupported compression/multi-volume missing segment with fail-fast behavior in `tests/integration/inno-sbom-unsupported.spec.ts`.  
+- [X] T035 [P] [US3] Add contract test for CLI exit codes/status JSON in `tests/contract/inno-sbom-cli.spec.ts`.
 
 ### Implementation for User Story 3
 
-- [ ] T036 [US3] Implement exit code mapping and fail-fast logic per contract in `src/cli/inno-sbom.ts`.  
-- [ ] T037 [P] [US3] Add timeout handling and graceful cancellation for extractor processes in `src/services/inno/extraction-runner.ts`.  
-- [ ] T038 [US3] Ensure scan-status JSON includes actionable errors and coverage thresholds in `src/cli/inno-sbom.ts`.  
-- [ ] T039 [US3] Add structured logging correlation IDs for CI traceability in `src/lib/logger.ts`.  
-- [ ] T040 [US3] Update quickstart with CI usage examples and exit code table in `specs/002-shortname-inno-setup-sbom/quickstart.md`.
+- [X] T036 [US3] Implement exit code mapping and fail-fast logic per contract in `src/cli/inno-sbom.ts`.  
+- [X] T037 [P] [US3] Add timeout handling and graceful cancellation for extractor processes in `src/services/inno/extraction-runner.ts`.  
+- [X] T038 [US3] Ensure scan-status JSON includes actionable errors and coverage thresholds in `src/cli/inno-sbom.ts`.  
+- [X] T039 [US3] Add structured logging correlation IDs for CI traceability in `src/lib/logger.ts`.  
+- [X] T040 [US3] Update quickstart with CI usage examples and exit code table in `specs/002-shortname-inno-setup-sbom/quickstart.md`.
 
 **Checkpoint**: All user stories independently functional
 
@@ -116,11 +116,11 @@
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T041 [P] Add performance/runtime budget validation script for 1 GB installer profile in `scripts/validate-inno-runtime.sh`.  
-- [ ] T042 Refine documentation: link SBOM schema validation steps and fixture checks in `README.md` and `specs/002-shortname-inno-setup-sbom/quickstart.md`.  
-- [ ] T043 [P] Add additional unit tests for edge cases (duplicate filenames, manual-review flags) in `tests/unit/inno/edge-cases.spec.ts`.  
-- [ ] T044 Run constitution checks: lint, format, tests, and update plan constitution status if changes occur in `specs/002-shortname-inno-setup-sbom/plan.md`.  
-- [ ] T045 [P] Add sample logs/status outputs to fixtures for documentation in `tests/fixtures/inno/logs/`.
+- [X] T041 [P] Add performance/runtime budget validation script for 1 GB installer profile in `scripts/validate-inno-runtime.sh`.  
+- [X] T042 Refine documentation: link SBOM schema validation steps and fixture checks in `README.md` and `specs/002-shortname-inno-setup-sbom/quickstart.md`.  
+- [X] T043 [P] Add additional unit tests for edge cases (duplicate filenames, manual-review flags) in `tests/unit/inno/edge-cases.spec.ts`.  
+- [X] T044 Run constitution checks: lint, format, tests, and update plan constitution status if changes occur in `specs/002-shortname-inno-setup-sbom/plan.md`.  
+- [X] T045 [P] Add sample logs/status outputs to fixtures for documentation in `tests/fixtures/inno/logs/`.
 
 ---
 

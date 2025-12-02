@@ -1,0 +1,1 @@
+﻿Placeholder fixture for unsupported installer. Replace with actual .exe when available.

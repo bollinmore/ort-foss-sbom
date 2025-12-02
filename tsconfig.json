@@ -13,10 +13,14 @@
     "baseUrl": "./src",
     "paths": {
       "@models/*": ["models/*"],
+      "@models/inno/*": ["models/inno/*"],
       "@services/*": ["services/*"],
+      "@services/inno/*": ["services/inno/*"],
       "@cli/*": ["cli/*"],
-      "@lib/*": ["lib/*"]
-    }
+      "@lib/*": ["lib/*"],
+      "@sbom/*": ["lib/sbom/*"]
+    },
+    "types": ["node", "jest"]
   },
   "include": ["src/**/*.ts"],
   "exclude": ["dist", "node_modules", "tests"]

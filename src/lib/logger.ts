@@ -1,8 +1,9 @@
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+type Stage = 'extracting' | 'classifying' | 'sbom_emitting' | 'initializing';
 
 export interface LogContext {
   jobId?: string;
-  stage?: string;
+  stage?: Stage;
   event?: string;
   code?: string;
   cmd?: string;
@@ -10,6 +11,7 @@ export interface LogContext {
   retries?: number;
   file?: string;
   uploadId?: number;
+  correlationId?: string;
   data?: unknown;
 }
 
@@ -33,6 +35,7 @@ function log(level: LogLevel, message: string, context: LogContext = {}, data?: 
     ts: new Date().toISOString(),
     level,
     message: redact(message),
+    stage: context.stage ?? 'initializing',
     ...context,
     data
   };
@@ -53,5 +56,14 @@ export function createLogger(baseContext: LogContext = {}) {
       log('error', msg, { ...baseContext, ...ctx }, data),
     metric: (name: string, value: number, ctx: LogContext = {}) =>
       log('info', 'metric', { ...baseContext, ...ctx, event: 'metric', code: name }, { value })
+  };
+}
+
+export function createStageLogger(stage: Stage, baseContext: LogContext = {}) {
+  const correlationId = baseContext.correlationId ?? `corr-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+  const logger = createLogger({ ...baseContext, stage, correlationId });
+  return {
+    ...logger,
+    stage
   };
 }

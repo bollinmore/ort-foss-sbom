@@ -7,6 +7,7 @@ Node.js 18+ TypeScript toolchain that runs OSS Review Toolkit (ORT) with downloa
 - Deterministic offline fixtures for tests; live mode uses ORT CLI + Fossology API.
 - Stage-scoped JSON logs with job ids; exits non-zero on license risk/unknowns.
 - Artifacts per job under `./out/job-<id>/` (SBOM, merged reports).
+- Inno Setup SBOM support: offline fixtures under `tests/fixtures/inno/`; SBOM validation and CI exit codes documented in `specs/002-shortname-inno-setup-sbom/quickstart.md`.
 
 ## Prerequisites
 - Node.js 18+ and npm.
@@ -27,6 +28,7 @@ npm run scan /absolute/path/to/project
 - `report.html`, `report.json`
 - `sbom.spdx.json` (and CycloneDX JSON/XML if produced)
 - ORT intermediates under `./out/job-<timestamp>/ort/`
+- Inno SBOM flow: `npm run inno-sbom -- --installer /abs/Setup.exe --output-dir ./out/inno` and validate SBOMs with `npm run validate:sbom` (placeholder until schemas are wired).
 
 `SIMULATE_RISK=1` forces a risk exit for CI gating tests.
 
@@ -58,6 +60,7 @@ Artifacts go to `./out/job-<timestamp>/`.
 - Fail the job within 1 minute if licenses are unknown/incompatible; exit code 1 with merged report.
 - Publish artifacts: `./out/<jobId>/report.html`, `report.json`, `sbom.spdx.json`; include status polling (≤30s freshness) and logs with `jobId`, `stage`, `event`, `code`.
 - Measure runtime against the <15m p95 target on the representative fixture repo.
+- For Inno SBOM: respect exit codes (0/2/3/4/5/6) in `specs/002-shortname-inno-setup-sbom/quickstart.md`, capture `scan-status.json` + SBOMs, and use `tests/fixtures/inno` for deterministic validation. `scripts/validate-inno-runtime.sh` serves as a runtime budget guardrail (placeholder until a 1 GB profile is added).
 
 ## Fossology upload only (existing ORT output)
 Use the scan result SPDX (not analyzer output), e.g. `.../ort/scan-result.spdx.json`.

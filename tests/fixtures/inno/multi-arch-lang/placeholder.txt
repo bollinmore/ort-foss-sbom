@@ -1,0 +1,1 @@
+﻿Placeholder fixture for multi-arch-lang installer. Replace with actual .exe when available.

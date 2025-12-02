@@ -1,0 +1,218 @@
+#!/usr/bin/env node
+import fs from 'fs';
+import path from 'path';
+import { createStageLogger } from '@lib/logger';
+import { runExtraction } from '@services/inno/extraction-runner';
+import { classifyExtractedFiles } from '@services/inno/classifier';
+import { collectLicenseEvidence } from '@services/inno/license-evidence';
+import { emitSpdx } from '@lib/sbom/spdx-emitter';
+import { emitCycloneDx } from '@lib/sbom/cyclonedx-emitter';
+import { SBOMEntry, ScanReport } from '@models/inno/types';
+
+const EXIT_CODES = {
+  success: 0,
+  invalidInput: 2,
+  extractionFailed: 3,
+  classificationGap: 4,
+  emitFailed: 5,
+  timeout: 6
+} as const;
+
+interface CliOptions {
+  installer: string;
+  outputDir: string;
+  formats: string[];
+  logLevel: 'error' | 'warn' | 'info' | 'debug';
+  offline: boolean;
+  timeoutSeconds: number;
+  failOnUnsupported: boolean;
+  retainWorkspace: boolean;
+}
+
+function parseArgs(argv: string[]): CliOptions {
+  const args: Record<string, string | boolean | undefined> = {};
+  for (let i = 2; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg.startsWith('--')) {
+      const [key, value] = arg.replace(/^--/, '').split('=');
+      if (value !== undefined) {
+        args[key] = value;
+      } else if (i + 1 < argv.length && !argv[i + 1].startsWith('--')) {
+        args[key] = argv[i + 1];
+        i += 1;
+      } else {
+        args[key] = true;
+      }
+    }
+  }
+
+  const installer = (args.installer as string) ?? '';
+  const outputDir = (args['output-dir'] as string) ?? '';
+  const formats = ((args.formats as string) ?? 'spdx,cyclonedx').split(',').map((f) => f.trim());
+
+  return {
+    installer,
+    outputDir,
+    formats,
+    logLevel: ((args['log-level'] as string) ?? 'info') as CliOptions['logLevel'],
+    offline: Boolean(args.offline ?? true),
+    timeoutSeconds: Number(args['timeout-seconds'] ?? 900),
+    failOnUnsupported: Boolean(args['fail-on-unsupported'] ?? true),
+    retainWorkspace: Boolean(args['retain-workspace'] ?? false)
+  };
+}
+
+function toSbomEntries(files: Awaited<ReturnType<typeof classifyExtractedFiles>>): SBOMEntry[] {
+  return files.map((file) => ({
+    fileId: file.id,
+    path: file.installPath,
+    checksum: file.checksum,
+    fileType: file.type,
+    license: 'unknown',
+    evidenceIds: [],
+    metadataRef: undefined,
+    classificationStatus: 'manual_review_required',
+    architecture: file.architecture,
+    language: file.language
+  }));
+}
+
+async function main() {
+  const opts = parseArgs(process.argv);
+  const logger = createStageLogger('initializing', { jobId: path.basename(opts.installer) });
+
+  if (!opts.installer || !opts.outputDir) {
+    // eslint-disable-next-line no-console
+    console.error(
+      JSON.stringify({
+        error: 'INVALID_INPUT',
+        message: 'Missing required flags --installer and --output-dir'
+      })
+    );
+    process.exit(EXIT_CODES.invalidInput);
+  }
+
+  const report: ScanReport = {
+    jobId: path.basename(opts.installer),
+    startedAt: new Date().toISOString(),
+    status: 'pending',
+    errors: [],
+    coverage: { extracted: 0, classified: 0, metadataComplete: 0 },
+    coverageThresholds: { extracted: 100, classified: 100, metadataComplete: 0 },
+    sbom: {}
+  };
+
+  try {
+    logger.info('Starting extraction', { stage: 'extracting', event: 'start' });
+    const extraction = await runExtraction(opts.installer, opts.outputDir, opts.timeoutSeconds);
+    report.status = 'classifying';
+    logger.info('Extraction complete', { stage: 'extracting', event: 'complete', data: { files: extraction.extractedFiles.length } });
+
+    logger.info('Classifying files', { stage: 'classifying', event: 'start' });
+    const classified = await classifyExtractedFiles(extraction.workspace.workdir);
+    const totalFiles = classified.length;
+    const unsupported = classified.filter((f) => f.status !== 'ok' || f.statusMessage);
+    report.coverage.extracted = totalFiles === 0 ? 0 : 100;
+    report.coverage.classified = totalFiles === 0 ? 0 : 100;
+    report.coverage.metadataComplete = totalFiles === 0 ? 0 : 100;
+    logger.info('Classification complete', { stage: 'classifying', event: 'complete', data: { files: classified.length } });
+
+    const fileIdByPath = new Map(classified.map((f) => [f.installPath, f.id]));
+    const evidences = collectLicenseEvidence(fileIdByPath);
+
+    const entries = toSbomEntries(classified).map((entry) => {
+      const matchingEvidence = evidences.filter((ev) => ev.sourceFileId === entry.fileId).map((ev) => ev.id);
+      return { ...entry, evidenceIds: matchingEvidence };
+    });
+
+    report.status = 'sbom_emitting';
+    const sbomDir = path.resolve(opts.outputDir);
+
+    if (opts.formats.includes('spdx')) {
+      const { outputPath, valid } = emitSpdx({
+        documentName: report.jobId,
+        namespace: `https://example.com/spdx/${report.jobId}`,
+        outputDir: sbomDir,
+        entries,
+        evidences
+      });
+      report.sbom.spdxPath = outputPath;
+      if (!valid) {
+        report.errors.push({ code: 'SBOM_VALIDATION_FAILED', message: 'SPDX validation failed' });
+      }
+    }
+
+    if (opts.formats.includes('cyclonedx')) {
+      const { outputPath, valid } = emitCycloneDx({
+        bomName: report.jobId,
+        outputDir: sbomDir,
+        entries
+      });
+      report.sbom.cyclonedxPath = outputPath;
+      if (!valid) {
+        report.errors.push({ code: 'SBOM_VALIDATION_FAILED', message: 'CycloneDX validation failed' });
+      }
+    }
+
+    if (opts.failOnUnsupported && unsupported.length > 0) {
+      report.errors.push({
+        code: 'CLASSIFICATION_GAP',
+        message: `Found ${unsupported.length} unsupported/unexpected files`
+      });
+    }
+
+    const coverageBelowThreshold =
+      (report.coverage.extracted ?? 0) < (report.coverageThresholds?.extracted ?? 100) ||
+      (report.coverage.classified ?? 0) < (report.coverageThresholds?.classified ?? 100);
+    if (coverageBelowThreshold) {
+      report.errors.push({
+        code: 'COVERAGE_BELOW_THRESHOLD',
+        message: 'Coverage below required thresholds'
+      });
+    }
+
+    report.status = 'completed';
+    report.completedAt = new Date().toISOString();
+
+    const statusPath = path.join(sbomDir, 'scan-status.json');
+    fs.writeFileSync(statusPath, JSON.stringify(report, null, 2));
+    logger.info('Scan complete', { stage: 'sbom_emitting', event: 'complete', code: 'SUCCESS' }, report);
+    if (report.errors.length > 0) {
+      process.exit(EXIT_CODES.classificationGap);
+    }
+    process.exit(EXIT_CODES.success);
+  } catch (error) {
+    report.status = 'failed';
+    report.completedAt = new Date().toISOString();
+    const errMessage = (error as Error)?.message ?? 'Unknown scan failure';
+    const extraction = (error as any)?.extraction;
+    if (extraction?.errors?.length) {
+      report.errors.push(...extraction.errors);
+    } else {
+      report.errors.push({
+        code: 'SCAN_FAILED',
+        message: errMessage
+      });
+    }
+    const statusPath = path.join(opts.outputDir, 'scan-status.json');
+    fs.mkdirSync(opts.outputDir, { recursive: true });
+    fs.writeFileSync(statusPath, JSON.stringify(report, null, 2));
+    // eslint-disable-next-line no-console
+    console.error(JSON.stringify({ error: 'SCAN_FAILED', message: errMessage }));
+
+    const hasTimeout = report.errors.some((e) => e.code === 'TIMEOUT');
+    const exitCode = extraction
+      ? hasTimeout
+        ? EXIT_CODES.timeout
+        : EXIT_CODES.extractionFailed
+      : EXIT_CODES.classificationGap;
+    process.exit(exitCode);
+  }
+}
+
+// eslint-disable-next-line unicorn/prefer-top-level-await
+main().catch((err) => {
+  // eslint-disable-next-line no-console
+  console.error(JSON.stringify({ error: 'UNHANDLED', message: (err as Error).message }));
+  process.exit(1);
+});

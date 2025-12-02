@@ -100,3 +100,5 @@ export interface ComplianceReport {
   reportUrl?: string;
   reportJsonUrl?: string;
 }
+
+export * from './inno/types';
